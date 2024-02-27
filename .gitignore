@@ -173,7 +173,9 @@ calorie_predicter/onehot_encoder.pkl
 calorie_predicter/tfidf_model.pkl
 calorie_predicter/skew_map.pkl
 calorie_predicter/dish_type_map.pkl
-calorie_predicter/X_text.csv
+
+calorie_predicter/X_test.csv
 calorie_predicter/X_train.csv
 calorie_predicter/y_train.csv
 calorie_predicter/y_test.csv
+calorie_predicter/mlruns/
