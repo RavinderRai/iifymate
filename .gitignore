@@ -164,3 +164,16 @@ config.json
 
 # Ignore Weights & Biases log files
 wandb/
+
+# Ignore recipes.csv - too large for github
+recipes.csv
+
+# calorie predictions folder files
+calorie_predicter/onehot_encoder.pkl
+calorie_predicter/tfidf_model.pkl
+calorie_predicter/skew_map.pkl
+calorie_predicter/dish_type_map.pkl
+calorie_predicter/X_text.csv
+calorie_predicter/X_train.csv
+calorie_predicter/y_train.csv
+calorie_predicter/y_test.csv
