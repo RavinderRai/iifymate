@@ -1,6 +1,8 @@
 import pandas as pd
 import warnings
 from sklearn.preprocessing import OneHotEncoder
+import os
+import yaml
 
 def round_up_to_nearest(number, bin_size=300):
     # Round up to the nearest multiple of 100
@@ -86,6 +88,7 @@ def priority_list_meal_type():
     priority_list = ['breakfast', 'lunch/dinner', 'brunch', 'snack', 'teatime']
     return priority_list
 
+"""
 def one_hot_encode(df, column):
     onehot_encoder = OneHotEncoder()
     
@@ -95,6 +98,21 @@ def one_hot_encode(df, column):
     onehot_encoded_df = pd.DataFrame(onehot_encoded_array, columns=onehot_encoder.get_feature_names_out([column]))
 
     return onehot_encoded_df
+"""
+
+def one_hot_encode(df, column):
+    # Initialize the one-hot encoder
+    onehot_encoder = OneHotEncoder()
+
+    # Fit the encoder to the column data
+    onehot_encoder.fit(df[[column]])
+
+    # Transform the column to one-hot encoded format
+    onehot_encoded = onehot_encoder.transform(df[[column]])
+    onehot_encoded_array = onehot_encoded.toarray()
+    onehot_encoded_df = pd.DataFrame(onehot_encoded_array, columns=onehot_encoder.get_feature_names_out([column]))
+
+    return onehot_encoded_df, onehot_encoder
 
 #making a function to remove stop words - taken from the above link
 def remove_stop_words(text, english_stop_words):
@@ -130,3 +148,33 @@ def pre_process_text(df, column, stop_words, lemmatizer, tokenizer, inplace=Fals
         new_df = df.copy()  # Make a copy of the original DataFrame
         new_df.loc[:, column] = recipes
         return new_df
+
+def get_experiment_folder_path(target_experiment_name, mlflow_dir="mlruns"):
+    """
+    Get the path to the folder corresponding to a specific MLflow experiment.
+
+    Parameters:
+        target_experiment_name (str): The name of the target MLflow experiment.
+        mlflow_dir (str, optional): The directory containing MLflow experiments.
+                                    Defaults to "mlruns".
+
+    Returns:
+        str: The path to the folder of the specified MLflow experiment,
+             or None if the experiment is not found.
+
+    """
+    # Iterate through each folder in mlruns, then check the YAML file for the experiment ID
+    for folder_name in os.listdir(mlflow_dir):
+        folder_path = os.path.join(mlflow_dir, folder_name)
+        if os.path.isdir(folder_path):
+            yaml_file_path = os.path.join(folder_path, "meta.yaml")
+            if os.path.exists(yaml_file_path):
+                # Open the YAML file and read the experiment name
+                with open(yaml_file_path, "r") as yaml_file:
+                    meta_data = yaml.safe_load(yaml_file)
+                    experiment_name = meta_data.get("name")
+                    if experiment_name == target_experiment_name:
+                        return folder_path
+    # Experiment not found, issue a warning
+    warnings.warn(f"Experiment '{target_experiment_name}' not found.")
+    return None

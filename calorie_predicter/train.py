@@ -22,7 +22,7 @@ y_test = pd.read_csv('y_test.csv')
 
 
 parameters = {
-    'learning_rate': [0.1, 0.01], 
+    'learning_rate': [0.1, 0.01, 0.001], 
     #'max_depth': [3, 5, 7],
     #'colsample_bytree': [0.6, 0.8, 1.0],
     #'n_estimators': [50, 100, 150]
@@ -59,8 +59,11 @@ metrics_dict = {
 for metric_name, metric_value in metrics_dict.items():
     print(f'{metric_name}: {metric_value}')
 
+mlflow.set_experiment("training_experiment")
+experiment = mlflow.get_experiment_by_name("training_experiment")
+
 # Log parameters, metrics, and model artifacts with MLflow
-with mlflow.start_run():
+with mlflow.start_run(experiment_id=experiment.experiment_id):
     # Log grid search parameters
     for key, value in parameters.items():
         mlflow.log_param(f'grid_search_{key}', value)

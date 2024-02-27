@@ -1,5 +1,6 @@
 import pandas as pd
 import ast
+import pickle
 import mlflow
 import mlflow.sklearn
 from utils import round_up_to_nearest, round_down_to_nearest, filter_calories, sorted_binned_encoding, collapsing_to_priority, priority_list_dish_type, priority_list_meal_type, one_hot_encode, pre_process_text
@@ -83,7 +84,8 @@ def preprocess_dish_type(pre_processed_df):
     dish_type_map = {'Approximately Symmetric (Normal Calories)': 1, 'Right Skewed (Lower Calories)': 0, 'Left Skewed (Higher Calories)': 2}
     pre_processed_df['dishTypeSkewedLabels'] = pre_processed_df['dishTypeSkewedLabels'].map(dish_type_map)
 
-    return pre_processed_df
+    #return the maps to save and load in predict.py file
+    return pre_processed_df, skew_map, dish_type_map
 
 def preprocess_meal_type(pre_processed_df):
     mealType_df = pre_processed_df['mealType'].apply(ast.literal_eval)
@@ -131,7 +133,10 @@ def get_training_testing_data(df, X_columns, y_column, test_size=0.20, random_st
 english_stop_words = stopwords.words('english')
 lemmatizer = WordNetLemmatizer()
 
-with mlflow.start_run():
+mlflow.set_experiment("data_processing_experiment")
+experiment = mlflow.get_experiment_by_name("data_processing_experiment")
+
+with mlflow.start_run(experiment_id=experiment.experiment_id):
 
     # Log script parameters
     mlflow.log_param('input_data_path', '../recipes.csv')
@@ -146,9 +151,9 @@ with mlflow.start_run():
 
     # Data preprocessing steps
     pre_processed_df = get_target_variable(df)
-    pre_processed_df = preprocess_dish_type(pre_processed_df)
+    pre_processed_df, skew_map, dish_type_map = preprocess_dish_type(pre_processed_df)
     pre_processed_df = preprocess_meal_type(pre_processed_df)
-    onehot_encoded_df = one_hot_encode(pre_processed_df, 'mealTypeRefined')
+    onehot_encoded_df, onehot_encoder = one_hot_encode(pre_processed_df, 'mealTypeRefined')
     pre_processed_df = pd.concat([pre_processed_df, onehot_encoded_df], axis=1)
     pre_processed_df = pre_process_text(df=pre_processed_df, column='label', stop_words=english_stop_words, lemmatizer=lemmatizer, tokenizer=word_tokenize)
 
@@ -171,26 +176,22 @@ with mlflow.start_run():
     mlflow.log_param('X_test_shape', X_test.shape)
     mlflow.log_param('y_train_shape', y_train.shape)
     mlflow.log_param('y_test_shape', y_test.shape)
-    mlflow.sklearn.log_model(tfidf_fitted, "tfidf_model")
 
-"""
-#dropping duplicates from recipe name (which is the label column) because some sources give the same recipes
-raw_df = pd.read_csv('../recipes.csv')
-df = raw_df.drop_duplicates('label')
+    #saving tfidf, onehot encoder, and maps for predict.py file, to make predictions on unseen data
+    with open("tfidf_model.pkl", "wb") as f:
+        pickle.dump(tfidf_fitted, f)
+    mlflow.log_artifact("tfidf_model.pkl")
 
-pre_processed_df = get_target_variable(df)
-pre_processed_df = preprocess_dish_type(pre_processed_df)
-pre_processed_df = preprocess_meal_type(pre_processed_df)
-onehot_encoded_df = one_hot_encode(pre_processed_df, 'mealTypeRefined')
-pre_processed_df = pd.concat([pre_processed_df, onehot_encoded_df], axis=1)
-pre_processed_df = pre_process_text(df=pre_processed_df, column='label', stop_words=english_stop_words, lemmatizer=lemmatizer, tokenizer=word_tokenize)
-
-pre_processed_df['dishTypeSkewedLabels'] = pre_processed_df['dishTypeSkewedLabels'].astype(int)
-pre_processed_df['calorieLabels'] = pre_processed_df['binnedCalories'].astype(int)
-
-X_cols = ['mealTypeRefined_breakfast', 'mealTypeRefined_lunch/dinner', 'mealTypeRefined_snack', 'label', 'dishTypeSkewedLabels']
-y_col = 'binnedCalories'
-X_train, X_test, y_train, y_test = get_training_testing_data(pre_processed_df, X_cols, y_col)
-
-print(pre_processed_df.shape)
-"""
+    with open("skew_map.pkl", "wb") as f:
+        pickle.dump(skew_map, f)
+    mlflow.log_artifact("skew_map.pkl")
+    
+    # Save the dish_type_map dictionary
+    with open("dish_type_map.pkl", "wb") as f:
+        pickle.dump(dish_type_map, f)
+    mlflow.log_artifact("dish_type_map.pkl")
+    
+    # Save the one-hot encoder
+    with open("onehot_encoder.pkl", "wb") as f:
+        pickle.dump(onehot_encoder, f)
+    mlflow.log_artifact("onehot_encoder.pkl")
