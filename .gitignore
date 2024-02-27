@@ -179,3 +179,4 @@ calorie_predicter/X_train.csv
 calorie_predicter/y_train.csv
 calorie_predicter/y_test.csv
 calorie_predicter/mlruns/
+calorie_predicter/__pycache__/

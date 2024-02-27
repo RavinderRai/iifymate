@@ -56,8 +56,8 @@ metrics_dict = {
     'testing_kappa': testing_kappa
 }
 
-for metric_name, metric_value in metrics_dict.items():
-    print(f'{metric_name}: {metric_value}')
+#for metric_name, metric_value in metrics_dict.items():
+#    print(f'{metric_name}: {metric_value}')
 
 mlflow.set_experiment("training_experiment")
 experiment = mlflow.get_experiment_by_name("training_experiment")
