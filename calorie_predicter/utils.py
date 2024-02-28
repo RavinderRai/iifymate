@@ -178,3 +178,25 @@ def get_experiment_folder_path(target_experiment_name, mlflow_dir="mlruns"):
     # Experiment not found, issue a warning
     warnings.warn(f"Experiment '{target_experiment_name}' not found.")
     return None
+
+def sample_data(df, target='calories', sample_size=3, to_csv=False):
+    """
+    Samples a subset of the DataFrame based on floored values of the target column.
+
+    Parameters:
+        df (DataFrame): Input DataFrame containing recipe data.
+        target (str): Name of the target column to floor values on. Default is 'calories'.
+        sample_size (int): Number of samples to select for each floored value. Default is 3.
+        to_csv (bool): If True, saves the sampled DataFrame to 'sample_recipes.csv'. Else returns sample_df. 
+    Returns:
+        DataFrame or None: Sampled subset of the DataFrame if `to_csv` is False, None otherwise.
+    """
+    floored_calories = df[target].apply(lambda x: x // 100 * 100).rename('floored_calories')
+    df_floored_calories = pd.concat([df, floored_calories], axis=1)
+    sample_df = df_floored_calories.groupby('floored_calories', group_keys=False).head(sample_size)
+    sample_df = sample_df.drop('floored_calories', axis=1)
+
+    if to_csv:
+        sample_df.to_csv('sample_recipes.csv', index=False)
+    else:
+        return sample_df
