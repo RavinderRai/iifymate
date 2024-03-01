@@ -5,11 +5,15 @@ feature engineering, and splitting the data into training and testing sets.
 It also saves artifacts such as models and encoders for future predictions.
 
 """
+import os
 import ast
 import pickle
+import json
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+from google.cloud import bigquery
+import pandas_gbq
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -212,7 +216,18 @@ if __name__ == "__main__":
         mlflow.log_param('python_script', 'data_processing.py')
 
         # Load and preprocess raw data
-        raw_df = pd.read_csv('../recipes.csv')
+        #raw_df = pd.read_csv('../recipes.csv')
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
+        gcp_config_file = '../flavourquasar-gcp-key.json'
+        with open(gcp_config_file, 'r') as file:
+                gcp_config_data = json.load(file)
+        project_id = gcp_config_data.get('project_id', None)
+        client = bigquery.Client(project_id)
+        query = """
+            SELECT *
+            FROM `flavourquasar.edamam_recipes.edamam_raw_data`
+        """
+        raw_df = pandas_gbq.read_gbq(query, project_id=project_id)
         df = raw_df.drop_duplicates('label')
 
         english_stop_words = stopwords.words('english')

@@ -1,7 +1,10 @@
 import requests
 import json
+import os
 import pandas as pd
 import time
+from google.cloud import bigquery
+import pandas_gbq
 
 class RecipeETL:
     """
@@ -21,21 +24,48 @@ class RecipeETL:
         save_to_csv(self, df, filename='recipes.csv'): Saves DataFrame to CSV.
         run_etl(self, ingredient): Performs ETL process (not implemented yet).
     """
-    
-    def __init__(self, config_file='config.json'):
+
+    def __init__(self, config_file='config.json', gcp_config_file='flavourquasar-gcp-key.json'):
         """Initializes a RecipeETL object."""
-        self.config_file = config_file
-        self.load_config()
-        #self.db_conn = None
-        
+        self.config_data = self.load_config(config_file_path)
+        api_keys = self.config_data.get('api_keys', {})
+        self.APP_ID = api_keys.get('edamam_app_id', None)
+        self.APP_KEY = api_keys.get('edamam_app_key', None)
+
+        self.gcp_config_file = gcp_config_file
+        self.gcp_config_data = self.load_config(self.gcp_config_file)
+        self.project_id = self.gcp_config_data.get('project_id', None)
+
+"""
+old function - can delete if newer one is working fine
     def load_config(self):
-        """Loads configuration data and extracts API keys."""
+        #Loads configuration data and extracts API keys.
         with open(self.config_file, 'r') as f:
             self.config_data = json.load(f)
         
         api_keys = self.config_data.get('api_keys', {})
         self.APP_ID = api_keys.get('edamam_app_id', None)
         self.APP_KEY = api_keys.get('edamam_app_key', None)
+"""
+
+    def load_config(self, config_file_path):
+        """
+        Load configuration settings from a JSON file.
+        Args:
+            config_file_path (str): Path to the configuration file.
+        Returns:
+            dict: A dictionary containing the configuration settings.
+        """
+        try:
+            with open(config_file_path, 'r') as file:
+                config_data = json.load(file)
+            return config_data
+        except FileNotFoundError:
+            print(f"Configuration file '{config_file_path}' not found.")
+            return {}
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from '{config_file_path}'. Make sure it's a valid JSON file.")
+            return {}
 
     def recipe_search(self, ingredient, from_index=0, to_index=100):
         """
@@ -90,7 +120,7 @@ class RecipeETL:
         
         return combined_df
 
-    def run_extract(self, df, column='commonIngredients', from_index=0, to_index=100, filename='recipes.csv', data_loading_method='csv'):
+    def run_extract(self, df, column='commonIngredients', from_index=0, to_index=100, filename='recipes.csv', data_loading_method='csv', dataset_id='edamam_recipes', table_id='edamam_raw_data'):
         """
         Uses previous functions to collect data an save it as a csv or load into a database.
         Args:
@@ -99,7 +129,10 @@ class RecipeETL:
             from_index (int, optional): The index of the first recipe to return (default is 0).
             to_index (int, optional): The index of the last recipe to return (default is 100 and cannot go past that).
             filename (str, optional): The name for the csv file that we will save the recipes dataframe under.
-            data_loading_method (str, optional): Selects whether to save data as a csv file or load into a database. Defaults to csv.
+            data_loading_method (str, optional): Selects whether to save data as a csv file or load into a database. 
+                                                 Takes values of 'csv' or 'database'. Defaults to csv.
+            dataset_id (str, optional): The dataset_id for a bigquery dataset. Defaults to 'edamam_recipes'
+            table_id (str, optional): The table_id for the recipe table in the dataset_id bigquery dataset. Defaults to 'edamam_raw_data'.
         Returns:
             list: A dataframe with the list of recipes.
         """
@@ -107,16 +140,17 @@ class RecipeETL:
 
         if data_loading_method =='csv':
             self.save_to_csv(recipes_df, filename=filename)
-        return recipes_df
-        """ implement this later - it will check if we are loading data into csv or database
-        elif data_loading_method=='database':
-            self.save_to_database(df)
+        elif data_loading_method =='database':
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.gcp_config_file
+            client = bigquery.Client(self.project_id)
+            destination_table = f"{self.project_id}.{dataset_id}.{table_id}"
+            pandas_gbq.to_gbq(df, destination_table, project_id=self.project_id, if_exists='append')
         else:
             raise ValueError("Unsupported data loading method specified in config file")
-        """
+        return recipes_df
 
 if __name__ == "__main__":
     etl = RecipeETL()
     ingredient = input("Enter the ingredient: ")
-    #etl.run_etl(ingredient)
+    #etl.run_extract(ingredient)
     #etl.close_database()  # Close database connection if open
