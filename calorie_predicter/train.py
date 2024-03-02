@@ -5,14 +5,22 @@ This script loads training and testing data from CSV files, trains an XGBoost cl
 using grid search for hyperparameter tuning, evaluates the model, and logs the best model,
 parameters, and metrics with MLflow.
 """
-
+import os
+import json
 import pandas as pd
 import mlflow
 import mlflow.sklearn
 #import cupy as cp
+from google.cloud import bigquery
+from google.cloud import aiplatform
 from sklearn.metrics import cohen_kappa_score, make_scorer, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
+
+def load_data_from_vertex_ai(client, table_id, dataset_id='training_data', project_id='flavourquasar'):
+    query = f"SELECT * FROM {project_id}.{dataset_id}.{table_id}"
+    query_job = client.query(query)
+    return query_job.to_dataframe()
 
 if __name__ == "__main__":
     DEVICE_ID=0
@@ -21,10 +29,22 @@ if __name__ == "__main__":
 
     kappa_scorer = make_scorer(cohen_kappa_score)
 
-    X_train = pd.read_csv('X_train.csv')
-    y_train = pd.read_csv('y_train.csv')
-    X_test = pd.read_csv('X_test.csv')
-    y_test = pd.read_csv('y_test.csv')
+    gcp_config_file = '../flavourquasar-gcp-key.json'
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
+    with open(gcp_config_file, 'r') as file:
+            gcp_config_data = json.load(file)
+    project_id = gcp_config_data.get('project_id', None)
+    client = bigquery.Client(project_id)
+
+    X_train = load_data_from_vertex_ai(client=client, table_id='X_train')
+    y_train = load_data_from_vertex_ai(client=client, table_id='y_train')
+    X_test = load_data_from_vertex_ai(client=client, table_id='X_test')
+    y_test = load_data_from_vertex_ai(client=client, table_id='y_test')
+
+    #X_train = pd.read_csv('X_train.csv')
+    #y_train = pd.read_csv('y_train.csv')
+    #X_test = pd.read_csv('X_test.csv')
+    #y_test = pd.read_csv('y_test.csv')
 
     #X_train, y_train = cp.array(X_train.values), cp.array(y_train)
     #X_test, y_test = cp.array(X_test), cp.array(y_test)

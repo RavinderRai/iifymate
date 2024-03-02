@@ -10,9 +10,13 @@ import ast
 import pickle
 import json
 import pandas as pd
+import logging
+logging.basicConfig(level=logging.INFO)
 import mlflow
 import mlflow.sklearn
+from google.cloud import storage
 from google.cloud import bigquery
+from google.cloud import aiplatform
 import pandas_gbq
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -204,6 +208,94 @@ def get_training_testing_data(df, X_columns, y_column, test_size=0.20, random_st
     # return tfidf_fitted for mlflow tracking and we will need it for predicting on new inputs
     return X_train_tfidf, X_test_tfidf, y_train, y_test, tfidf_fitted
 
+def delete_table(client, dataset_id, table_id):
+    """
+    Deletes a table in BigQuery.
+    Args:
+        client (BigQuery Client): Set client = bigquery.Client(project_id) before hand and use as input.
+        dataset_id (str): The ID of the BigQuery dataset.
+        table_id (str): The ID of the table to delete.
+    Returns:
+        None
+    """
+    table_ref = client.dataset(dataset_id).table(table_id)
+    client.delete_table(table_ref, not_found_ok=True)
+
+def upload_data_to_vertex_ai(client, df_train_test, display_name, table_id, dataset_id='training_data', project_id='flavourquasar', delete_data=True):
+    """
+    Uploads training and testing data to a Vertex AI Dataset.
+
+    Args:
+        client (BigQuery Client): Set client = bigquery.Client(project_id) before hand and use as input.
+        df_train_test (pandas DataFrame): DataFrame containing training and testing data.
+        display_name (str): Display name for the Vertex AI Dataset.
+        table_id (str): ID of the BigQuery table to create and store the data.
+        dataset_id (str, optional): ID of the BigQuery dataset. Defaults to 'training_data'.
+        project_id (str, optional): Google Cloud project ID. Defaults to 'flavourquasar'.
+
+    Returns:
+        None
+    """
+    logging.info("Creating dataset in bigquery if it does not exists already...")
+    bq_dataset_id = f"{project_id}.{dataset_id}"
+    bq_dataset = bigquery.Dataset(bq_dataset_id)
+    client.create_dataset(bq_dataset, exists_ok=True)
+
+    # delete the table so it doesn't add the same data on top pre-existing data
+    if delete_data:
+        delete_table(client, dataset_id, table_id)
+
+    logging.info("Creating table in bigquery if it does not exists already...")
+    recipes_df_train_test = client.dataset(dataset_id).table(table_id)
+    df_train_test_table = bigquery.Table(recipes_df_train_test)
+    client.create_table(df_train_test_table, exists_ok=True)
+    
+    logging.info("Uploading data to Vertex AI...")
+    dataset = aiplatform.TabularDataset.create_from_dataframe(
+        df_source=df_train_test,
+        staging_path=f"bq://{bq_dataset_id}.{table_id}",
+        display_name=display_name,
+    )
+
+def create_bucket(bucket_name):
+    """
+    Creates a GCS bucket if it does not already exist.
+    Args:
+        bucket_name (str): The name of the GCS bucket to create.
+    Returns:
+        None
+    """
+    # Initialize the GCS client
+    storage_client = storage.Client()
+
+    # Check if the bucket already exists
+    bucket = storage_client.bucket(bucket_name)
+    if not bucket.exists():
+        # If the bucket does not exist, create it
+        bucket.create()
+        print(f"Bucket {bucket.name} created.")
+    else:
+        print(f"Bucket {bucket.name} already exists. Skipping creation.")
+
+def upload_artifact_to_gcs(bucket_name, artifact_path, local_file_path):
+    """
+    Uploads a file to Google Cloud Storage.
+    Args:
+        bucket_name (str): Name of the GCS bucket.
+        artifact_path (str): Path within the bucket to store the artifact.
+        local_file_path (str): Path to the local pickle file to upload.
+    Returns:
+        None
+    """
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(artifact_path)
+    blob.upload_from_filename(local_file_path)
+
+    logging.info(f"Artifact uploaded to: gs://{bucket_name}/{artifact_path}")
+
+bucket_name = "calorie_predictor"
+artifact_subdirectory = "artifacts"
+mlflow.set_tracking_uri(f"gs://{bucket_name}")
 
 if __name__ == "__main__":
     mlflow.set_experiment("data_processing_experiment")
@@ -216,18 +308,20 @@ if __name__ == "__main__":
         mlflow.log_param('python_script', 'data_processing.py')
 
         # Load and preprocess raw data
-        #raw_df = pd.read_csv('../recipes.csv')
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
         gcp_config_file = '../flavourquasar-gcp-key.json'
         with open(gcp_config_file, 'r') as file:
                 gcp_config_data = json.load(file)
         project_id = gcp_config_data.get('project_id', None)
+        
         client = bigquery.Client(project_id)
+        
         query = """
             SELECT *
             FROM `flavourquasar.edamam_recipes.edamam_raw_data`
         """
-        raw_df = pandas_gbq.read_gbq(query, project_id=project_id)
+        #raw_df = pandas_gbq.read_gbq(query, project_id=project_id)
+        raw_df = pd.read_csv('../recipes.csv') #uncomment for faster loading if data is in a csv file locally
         df = raw_df.drop_duplicates('label')
 
         english_stop_words = stopwords.words('english')
@@ -263,11 +357,32 @@ if __name__ == "__main__":
         # Split data into training and testing sets
         X_train, X_test, y_train, y_test, tfidf_fitted = get_training_testing_data(
             pre_processed_df, X_cols, y_col)
-        X_train.to_csv('X_train.csv', index=False)
-        X_test.to_csv('X_test.csv', index=False)
-        y_train.to_csv('y_train.csv', index=False)
-        y_test.to_csv('y_test.csv', index=False)
 
+        #bigquery won't accept column names with slashes in them
+        X_train = X_train.rename({'mealTypeRefined_lunch/dinner': 'mealTypeRefined_lunch_dinner'}, axis=1)
+        X_test = X_test.rename({'mealTypeRefined_lunch/dinner': 'mealTypeRefined_lunch_dinner'}, axis=1)
+        y_train = y_train.to_frame()
+        y_test = y_test.to_frame()
+
+        upload_params_list = [
+            {'df_train_test': X_train, 'display_name': 'X_train_table', 'table_id': 'X_train'},
+            {'df_train_test': X_test, 'display_name': 'X_test_table', 'table_id': 'X_test'},
+            {'df_train_test': y_train, 'display_name': 'y_train_table', 'table_id': 'y_train'},
+            {'df_train_test': y_test, 'display_name': 'y_test_table', 'table_id': 'y_test'}
+        ]
+        
+        # Iterate over the list and call upload_data_to_vertex_ai for each set of parameters
+        for params in upload_params_list:
+            upload_data_to_vertex_ai(client=client, **params)        
+
+        #X_train.to_csv('X_train.csv', index=False)
+        #X_test.to_csv('X_test.csv', index=False)
+        #y_train.to_csv('y_train.csv', index=False)
+        #y_test.to_csv('y_test.csv', index=False)
+          
+        create_bucket(bucket_name)
+
+        
         mlflow.log_param('X_train_shape', X_train.shape)
         mlflow.log_param('X_test_shape', X_test.shape)
         mlflow.log_param('y_train_shape', y_train.shape)
@@ -276,18 +391,22 @@ if __name__ == "__main__":
         # saving tfidf, onehot encoder, and maps for predict.py file, to make predictions on unseen data
         with open("tfidf_model.pkl", "wb") as f:
             pickle.dump(tfidf_fitted, f)
-        mlflow.log_artifact("tfidf_model.pkl")
+        mlflow.log_artifact("tfidf_model.pkl", artifact_path=artifact_subdirectory)
+        bucket_name = 'calorie_predictor'
+        artifact_path = 'data_processing/skew_map.pkl'
+        local_file_path = '../calorie_predicter/skew_map.pkl'
+        upload_artifact_to_gcs(bucket_name, artifact_path, local_file_path)
 
         with open("skew_map.pkl", "wb") as f:
             pickle.dump(skew_map, f)
-        mlflow.log_artifact("skew_map.pkl")
+        mlflow.log_artifact("skew_map.pkl", artifact_path=artifact_subdirectory)
 
         # Save the dish_type_map dictionary
         with open("dish_type_map.pkl", "wb") as f:
             pickle.dump(dish_type_map, f)
-        mlflow.log_artifact("dish_type_map.pkl")
+        mlflow.log_artifact("dish_type_map.pkl", artifact_path=artifact_subdirectory)
 
         # Save the one-hot encoder
         with open("onehot_encoder.pkl", "wb") as f:
             pickle.dump(onehot_encoder, f)
-        mlflow.log_artifact("onehot_encoder.pkl")
+        mlflow.log_artifact("onehot_encoder.pkl", artifact_path=artifact_subdirectory)
