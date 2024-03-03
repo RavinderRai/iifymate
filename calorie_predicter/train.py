@@ -7,12 +7,14 @@ parameters, and metrics with MLflow.
 """
 import os
 import json
+import pickle
+import logging
+logging.basicConfig(level=logging.INFO)
 import pandas as pd
 import mlflow
 import mlflow.sklearn
 #import cupy as cp
-from google.cloud import bigquery
-from google.cloud import aiplatform
+from google.cloud import bigquery, aiplatform, storage
 from sklearn.metrics import cohen_kappa_score, make_scorer, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
@@ -21,6 +23,29 @@ def load_data_from_vertex_ai(client, table_id, dataset_id='training_data', proje
     query = f"SELECT * FROM {project_id}.{dataset_id}.{table_id}"
     query_job = client.query(query)
     return query_job.to_dataframe()
+
+def upload_artifact_to_gcs(artifact_path, artifact, bucket_name='calorie_predictor'):
+    """
+    Uploads a Python dictionary to Google Cloud Storage as a pickle file.
+    Args:
+        bucket_name (str): Name of the GCS bucket.
+        artifact_path (str): Path within the bucket to store the artifact.
+        dictionary (dict): Python dictionary to upload.
+    Returns:
+        None
+    """
+    # Convert artifact to a pickle byte stream
+    pickle_data = pickle.dumps(artifact)
+
+    # Initialize a client and bucket
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    # Upload the pickle data to GCS
+    blob = bucket.blob(artifact_path)
+    blob.upload_from_string(pickle_data)
+
+    logging.info(f"Artifact uploaded to: gs://{bucket_name}/{artifact_path}")
 
 if __name__ == "__main__":
     DEVICE_ID=0
@@ -84,6 +109,12 @@ if __name__ == "__main__":
         'testing_kappa': testing_kappa
     }
 
+    upload_artifact_to_gcs('training/evaluation_metrics.pkl', metrics_dict)
+    upload_artifact_to_gcs('training/parameters.pkl', parameters)
+    upload_artifact_to_gcs('training/XGBoost_model.pkl', clf.best_estimator_)
+
+    """
+    # uncomment if using mlflow locally
     mlflow.set_experiment("training_experiment")
     experiment = mlflow.get_experiment_by_name("training_experiment")
 
@@ -103,3 +134,4 @@ if __name__ == "__main__":
 
         # Log XGBoost model
         mlflow.sklearn.log_model(clf.best_estimator_, 'xgboost_model')
+    """

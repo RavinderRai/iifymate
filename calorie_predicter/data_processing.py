@@ -273,29 +273,32 @@ def create_bucket(bucket_name):
     if not bucket.exists():
         # If the bucket does not exist, create it
         bucket.create()
-        print(f"Bucket {bucket.name} created.")
+        logging.info(f"Bucket {bucket.name} created.")
     else:
-        print(f"Bucket {bucket.name} already exists. Skipping creation.")
+        logging.info(f"Bucket {bucket.name} already exists. Skipping creation.")
 
-def upload_artifact_to_gcs(bucket_name, artifact_path, local_file_path):
+def upload_artifact_to_gcs(bucket_name, artifact_path, artifact):
     """
-    Uploads a file to Google Cloud Storage.
+    Uploads a Python dictionary to Google Cloud Storage as a pickle file.
     Args:
         bucket_name (str): Name of the GCS bucket.
         artifact_path (str): Path within the bucket to store the artifact.
-        local_file_path (str): Path to the local pickle file to upload.
+        dictionary (dict): Python dictionary to upload.
     Returns:
         None
     """
+    # Convert artifact to a pickle byte stream
+    pickle_data = pickle.dumps(artifact)
+
+    # Initialize a client and bucket
+    client = storage.Client()
     bucket = client.bucket(bucket_name)
+
+    # Upload the pickle data to GCS
     blob = bucket.blob(artifact_path)
-    blob.upload_from_filename(local_file_path)
+    blob.upload_from_string(pickle_data)
 
     logging.info(f"Artifact uploaded to: gs://{bucket_name}/{artifact_path}")
-
-bucket_name = "calorie_predictor"
-artifact_subdirectory = "artifacts"
-mlflow.set_tracking_uri(f"gs://{bucket_name}")
 
 if __name__ == "__main__":
     mlflow.set_experiment("data_processing_experiment")
@@ -358,6 +361,8 @@ if __name__ == "__main__":
         X_train, X_test, y_train, y_test, tfidf_fitted = get_training_testing_data(
             pre_processed_df, X_cols, y_col)
 
+        # Now data and objects/artifacts are ready to be uploaded to GCP
+
         #bigquery won't accept column names with slashes in them
         X_train = X_train.rename({'mealTypeRefined_lunch/dinner': 'mealTypeRefined_lunch_dinner'}, axis=1)
         X_test = X_test.rename({'mealTypeRefined_lunch/dinner': 'mealTypeRefined_lunch_dinner'}, axis=1)
@@ -373,29 +378,47 @@ if __name__ == "__main__":
         
         # Iterate over the list and call upload_data_to_vertex_ai for each set of parameters
         for params in upload_params_list:
-            upload_data_to_vertex_ai(client=client, **params)        
+            upload_data_to_vertex_ai(client=client, **params)
 
-        #X_train.to_csv('X_train.csv', index=False)
-        #X_test.to_csv('X_test.csv', index=False)
-        #y_train.to_csv('y_train.csv', index=False)
-        #y_test.to_csv('y_test.csv', index=False)
-          
+        train_test_sets_shapes = {
+            'X_train_shape': X_train.shape, 
+            'X_test_shape': X_test.shape, 
+            'y_train_shape': y_train.shape, 
+            'y_test_shape': y_test.shape
+        }
+
+        bucket_name = 'calorie_predictor'
         create_bucket(bucket_name)
 
+        #create a list of dicts to iterate over for clarity
+        artifacts = [
+            {'path': 'data_processing/train_test_sets_shapes.pkl', 'artifact': train_test_sets_shapes},
+            {'path': 'data_processing/skew_map.pkl', 'artifact': skew_map},
+            {'path': 'data_processing/dish_type_map.pkl', 'artifact': dish_type_map},
+            {'path': 'data_processing/tfidf_fitted.pkl', 'artifact': tfidf_fitted},
+            {'path': 'data_processing/onehot_encoder.pkl', 'artifact': onehot_encoder}
+        ]
+
+        for artifact in artifacts:
+            upload_artifact_to_gcs(bucket_name, artifact['path'], artifact['artifact'])
+
+        """
+        # old code to save everythign locally. Uncomment if needed.
+        X_train.to_csv('X_train.csv', index=False)
+        X_test.to_csv('X_test.csv', index=False)
+        y_train.to_csv('y_train.csv', index=False)
+        y_test.to_csv('y_test.csv', index=False)
+
         
-        mlflow.log_param('X_train_shape', X_train.shape)
-        mlflow.log_param('X_test_shape', X_test.shape)
-        mlflow.log_param('y_train_shape', y_train.shape)
-        mlflow.log_param('y_test_shape', y_test.shape)
+        mlflow.log_param('X_train_shape', train_test_sets_shapes['X_train_shape'])
+        mlflow.log_param('X_test_shape', train_test_sets_shapes['X_test_shape'])
+        mlflow.log_param('y_train_shape', train_test_sets_shapes['y_train_shape'])
+        mlflow.log_param('y_test_shape', train_test_sets_shapes['y_test_shape'])
 
         # saving tfidf, onehot encoder, and maps for predict.py file, to make predictions on unseen data
         with open("tfidf_model.pkl", "wb") as f:
             pickle.dump(tfidf_fitted, f)
         mlflow.log_artifact("tfidf_model.pkl", artifact_path=artifact_subdirectory)
-        bucket_name = 'calorie_predictor'
-        artifact_path = 'data_processing/skew_map.pkl'
-        local_file_path = '../calorie_predicter/skew_map.pkl'
-        upload_artifact_to_gcs(bucket_name, artifact_path, local_file_path)
 
         with open("skew_map.pkl", "wb") as f:
             pickle.dump(skew_map, f)
@@ -410,3 +433,5 @@ if __name__ == "__main__":
         with open("onehot_encoder.pkl", "wb") as f:
             pickle.dump(onehot_encoder, f)
         mlflow.log_artifact("onehot_encoder.pkl", artifact_path=artifact_subdirectory)
+        """
+

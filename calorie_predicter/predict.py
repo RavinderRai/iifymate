@@ -4,16 +4,20 @@ Module to preprocess user input and output calorie predictions in a 300 calorie 
 Functions:
     - latest_run(directory): Retrieves the folder with the latest mlflow activity.
     - load_pickle(artifacts_path, file_name): Retrieves a pickle file in a given directory.
+    - load_artifact_from_gcs(artifact_path, bucket_name='calorie_predictor'): Retrieves pickle file from GCP
     - preprocess_input(user_input, artifacts_path): Preprocesses user input data for the model.
     - post_process(num_of_classes): Creates a dictionary to map integers back to intervals.
+    - upload_artifact_to_gcs(artifact_path, artifact, bucket_name='calorie_predictor'): Stores pickle file from GCP
 """
-
 import os
 import time
 import pickle
+import logging
+logging.basicConfig(level=logging.INFO)
 import pandas as pd
-import mlflow
-import mlflow.sklearn
+from google.cloud import storage
+#import mlflow
+#import mlflow.sklearn
 from utils import get_experiment_folder_path
 
 # Get a list of directories in mlruns/0 and then sort by creation time to get the latest one
@@ -45,8 +49,32 @@ def load_pickle(artifacts_path, file_name):
         pickle_file = pickle.load(f)
         return pickle_file
 
+def load_artifact_from_gcs(artifact_path, bucket_name='calorie_predictor'):
+    """
+    Loads an artifact from a pickle file stored in Google Cloud Storage.
+    Args:
+        bucket_name (str): Name of the GCS bucket.
+        artifact_path (str): Path within the bucket where the artifact is stored.
+    Returns:
+        object: Loaded pickle file.
+    """
+    # Initialize a client and bucket
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
 
-def preprocess_input(user_input, artifacts_path):
+    # Get the blob (pickle file) from GCS
+    blob = bucket.blob(artifact_path)
+
+    # Download the pickle file contents as bytes
+    pickle_bytes = blob.download_as_string()
+
+    # Load the dictionary from the downloaded pickle file contents
+    loaded_artifact = pickle.loads(pickle_bytes)
+
+    return loaded_artifact
+
+
+def preprocess_input(user_input):
     """
     Preprocesses user input data for model prediction.
     Parameters:
@@ -58,10 +86,18 @@ def preprocess_input(user_input, artifacts_path):
     Returns:
     pandas.DataFrame: Preprocessed input data ready for model prediction.
     """
-    tfidf_model = load_pickle(artifacts_path, "tfidf_model.pkl")
-    onehot_encoder = load_pickle(artifacts_path, "onehot_encoder.pkl")
-    skew_map = load_pickle(artifacts_path, "skew_map.pkl")
-    dish_type_map = load_pickle(artifacts_path, "dish_type_map.pkl")
+
+    #uncomment below if using mlflow and local files
+    #tfidf_model = load_pickle(artifacts_path, "tfidf_model.pkl")
+    #onehot_encoder = load_pickle(artifacts_path, "onehot_encoder.pkl")
+    #skew_map = load_pickle(artifacts_path, "skew_map.pkl")
+    #dish_type_map = load_pickle(artifacts_path, "dish_type_map.pkl")
+
+    #loading preprocessing objects from GCP
+    tfidf_model = load_artifact_from_gcs(artifact_path='data_processing/tfidf_fitted.pkl')
+    onehot_encoder = load_artifact_from_gcs(artifact_path='data_processing/onehot_encoder.pkl')
+    skew_map = load_artifact_from_gcs(artifact_path='data_processing/skew_map.pkl')
+    dish_type_map = load_artifact_from_gcs(artifact_path='data_processing/dish_type_map.pkl')
 
     user_input = pd.DataFrame(user_input)
 
@@ -83,7 +119,10 @@ def preprocess_input(user_input, artifacts_path):
         'mealTypeRefined_lunch/dinner', 'mealTypeRefined_snack',
         'label', 'dishTypeSkewedLabels'
     ]]
-    # make sure this column is a float dtype
+
+    
+    # make sure this column is a float dtype and remove / from names since GCP doesn't take it
+    user_input = user_input.rename({'mealTypeRefined_lunch/dinner': 'mealTypeRefined_lunch_dinner'}, axis=1)
     user_input['dishTypeSkewedLabels'] = user_input['dishTypeSkewedLabels'].astype(
         float)
 
@@ -113,7 +152,33 @@ def post_process(num_of_classes):
         intervals[i] = interval
     return intervals
 
+def upload_artifact_to_gcs(artifact_path, artifact, bucket_name='calorie_predictor'):
+    """
+    Uploads a Python dictionary to Google Cloud Storage as a pickle file.
+    Args:
+        bucket_name (str): Name of the GCS bucket.
+        artifact_path (str): Path within the bucket to store the artifact.
+        dictionary (dict): Python dictionary to upload.
+    Returns:
+        None
+    """
+    # Convert artifact to a pickle byte stream
+    pickle_data = pickle.dumps(artifact)
+
+    # Initialize a client and bucket
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    # Upload the pickle data to GCS
+    blob = bucket.blob(artifact_path)
+    blob.upload_from_string(pickle_data)
+
+    logging.info(f"Artifact uploaded to: gs://{bucket_name}/{artifact_path}")
+
+
 if __name__ == "__main__":
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
+    
     data_processing_experiment_id = get_experiment_folder_path('data_processing_experiment')
     mlflow_artifacts_path = latest_run(data_processing_experiment_id) + '/artifacts/'
 
@@ -127,7 +192,7 @@ if __name__ == "__main__":
         'mealTypeRefined': ['lunch/dinner']
     }
 
-    sample_user_input = preprocess_input(sample_user_input_raw, mlflow_artifacts_path)
+    sample_user_input = preprocess_input(sample_user_input_raw)
 
     # getting the max int to get the number of classes
     y_train, y_test = pd.read_csv('y_train.csv'), pd.read_csv('y_test.csv')
@@ -138,6 +203,25 @@ if __name__ == "__main__":
 
     interval_map = post_process(num_of_classes=max_class_int)
 
+    loaded_model = load_artifact_from_gcs(artifact_path='training/XGBoost_model.pkl')
+
+    # Make predictions and get probability estimates as well as latency
+    start_time = time.time()
+    class_probabilities = loaded_model.predict_proba(sample_user_input)
+    end_time = time.time()
+    prediction_latency_ms = (end_time - start_time) * 1000  # milliseconds
+    latency_data = {'latency': prediction_latency_ms, 'units': 'milliseconds'}
+
+    #saving these to GCP
+    upload_artifact_to_gcs('predicting/class_probabilities.pkl', class_probabilities)
+    upload_artifact_to_gcs('predicting/model_latency.pkl', latency_data)
+
+    #getting class from probabilities
+    predicted_class_idx = class_probabilities.argmax(axis=1)[0]
+    predicted_calorie_range = interval_map[predicted_class_idx]
+    print(predicted_calorie_range, 'calories')
+
+    """remove comments if using mlflow locally
     mlflow.set_experiment("predictions_experiment")
     experiment = mlflow.get_experiment_by_name("predictions_experiment")
 
@@ -152,21 +236,21 @@ if __name__ == "__main__":
             '/artifacts/xgboost_model/'
         loaded_model = mlflow.sklearn.load_model(model_path)
 
-        # Make predictions and log probability estimates
+        # Make predictions and get probability estimates as well as latency
         start_time = time.time()
-        probabilities = loaded_model.predict_proba(sample_user_input)
+        class_probabilities = loaded_model.predict_proba(sample_user_input)
         end_time = time.time()
-        latency_ms = (end_time - start_time) * 1000  # milliseconds
+        prediction_latency_ms = (end_time - start_time) * 1000  # milliseconds
 
-        mlflow.log_metric('prediction_latency_ms', latency_ms)
-        for class_idx, class_probabilities in enumerate(probabilities[0]):
-            mlflow.log_metric(
-                f'class_{class_idx}_probability', class_probabilities)
-
-        # Get the predicted class index and map it to the corresponding interval
-        # calculate the max from probabilities so we don't run prediction twice
-        predicted_class_idx = probabilities.argmax(axis=1)[0]
+        #getting class from probabilities
+        predicted_class_idx = class_probabilities.argmax(axis=1)[0]
         predicted_calorie_range = interval_map[predicted_class_idx]
         print(predicted_calorie_range, 'calories')
 
+        mlflow.log_metric('prediction_latency_ms', prediction_latency_ms)
+        for class_idx, class_probabilities in enumerate(class_probabilities[0]):
+            mlflow.log_metric(
+                f'class_{class_idx}_probability', class_probabilities)
+
         mlflow.log_param('predicted_calorie_range', predicted_calorie_range)
+    """
