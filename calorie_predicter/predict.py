@@ -175,17 +175,34 @@ def upload_artifact_to_gcs(artifact_path, artifact, bucket_name='calorie_predict
 
     logging.info(f"Artifact uploaded to: gs://{bucket_name}/{artifact_path}")
 
+def predict_calories(user_input, num_of_classes=13, artifact_path='training/XGBoost_model.pkl', log_artifacts=True, set_google_environment=True):
+    if set_google_environment:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
+
+    interval_map = post_process(num_of_classes=num_of_classes)
+    loaded_model = load_artifact_from_gcs(artifact_path=artifact_path)
+
+    # Make predictions and get probability estimates as well as latency
+    start_time = time.time()
+    class_probabilities = loaded_model.predict_proba(user_input)
+    end_time = time.time()
+    prediction_latency_ms = (end_time - start_time) * 1000  # milliseconds
+    latency_data = {'latency': prediction_latency_ms, 'units': 'milliseconds'}
+
+    #saving these to GCP
+    if log_artifacts:
+        upload_artifact_to_gcs('predicting/class_probabilities.pkl', class_probabilities)
+        upload_artifact_to_gcs('predicting/model_latency.pkl', latency_data)
+
+    #getting class from probabilities
+    predicted_class_idx = class_probabilities.argmax(axis=1)[0]
+    predicted_calorie_range = interval_map[predicted_class_idx]
+    return predicted_calorie_range
+
 
 if __name__ == "__main__":
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
     
-    data_processing_experiment_id = get_experiment_folder_path('data_processing_experiment')
-    mlflow_artifacts_path = latest_run(data_processing_experiment_id) + '/artifacts/'
-
-    # Load the test data
-    X_test = pd.read_csv('X_test.csv')
-    sample_test_input = X_test.iloc[0].to_numpy().reshape(1, -1)
-
     sample_user_input_raw = {
         'label': ['Carrot Soup'],
         'dishType': ['main course'],
@@ -201,27 +218,18 @@ if __name__ == "__main__":
         list(y_train[target_name]) + list(y_test[target_name])
     )
 
-    interval_map = post_process(num_of_classes=max_class_int)
+    predicted_calorie_range = predict_calories(
+        sample_user_input, num_of_classes=max_class_int, 
+        artifact_path='training/XGBoost_model.pkl', 
+        log_artifacts=True, 
+        set_google_environment=True)
 
-    loaded_model = load_artifact_from_gcs(artifact_path='training/XGBoost_model.pkl')
-
-    # Make predictions and get probability estimates as well as latency
-    start_time = time.time()
-    class_probabilities = loaded_model.predict_proba(sample_user_input)
-    end_time = time.time()
-    prediction_latency_ms = (end_time - start_time) * 1000  # milliseconds
-    latency_data = {'latency': prediction_latency_ms, 'units': 'milliseconds'}
-
-    #saving these to GCP
-    upload_artifact_to_gcs('predicting/class_probabilities.pkl', class_probabilities)
-    upload_artifact_to_gcs('predicting/model_latency.pkl', latency_data)
-
-    #getting class from probabilities
-    predicted_class_idx = class_probabilities.argmax(axis=1)[0]
-    predicted_calorie_range = interval_map[predicted_class_idx]
     print(predicted_calorie_range, 'calories')
 
     """remove comments if using mlflow locally
+    data_processing_experiment_id = get_experiment_folder_path('data_processing_experiment')
+    mlflow_artifacts_path = latest_run(data_processing_experiment_id) + '/artifacts/'
+    
     mlflow.set_experiment("predictions_experiment")
     experiment = mlflow.get_experiment_by_name("predictions_experiment")
 
