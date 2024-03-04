@@ -21,7 +21,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi  
       - name: Test with pytest
         run: |  
-          coverage run -m pytest calorie_predicter/tests -v -s  
+          PYTHONPATH=.. coverage run -m pytest calorie_predicter/tests -v -s  
       - name: Generate Coverage Report  
         run: |  
           coverage report -m
