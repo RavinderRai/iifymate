@@ -3,21 +3,20 @@ import pytest
 
 import sys
 import os
-#sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-
-
-@pytest.fixture
-def test_data():
-    return pd.read_csv('sample_recipes.csv')
-
-sys.path.append("../calorie_predicter/")
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+#sys.path.append("../calorie_predicter/")
 
 from calorie_predicter.data_processing import get_target_variable, preprocess_dish_type, preprocess_meal_type, get_training_testing_data, pre_process_text
 from calorie_predicter.utils import one_hot_encode
 from calorie_predicter import utils
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+@pytest.fixture
+def test_data():
+    return pd.read_csv('tests/sample_recipes.csv')
 
 @pytest.fixture
 def binned_calories_data(test_data):
