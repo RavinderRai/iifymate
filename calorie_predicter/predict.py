@@ -18,7 +18,7 @@ import pandas as pd
 from google.cloud import storage
 #import mlflow
 #import mlflow.sklearn
-from utils import get_experiment_folder_path
+#from utils import get_experiment_folder_path
 
 # Get a list of directories in mlruns/0 and then sort by creation time to get the latest one
 def latest_run(directory):
@@ -212,14 +212,16 @@ if __name__ == "__main__":
     sample_user_input = preprocess_input(sample_user_input_raw)
 
     # getting the max int to get the number of classes
+    """
     y_train, y_test = pd.read_csv('y_train.csv'), pd.read_csv('y_test.csv')
     target_name = y_train.columns[0]
     max_class_int = max(
         list(y_train[target_name]) + list(y_test[target_name])
     )
+    """
 
     predicted_calorie_range = predict_calories(
-        sample_user_input, num_of_classes=max_class_int, 
+        sample_user_input, num_of_classes=13, 
         artifact_path='training/XGBoost_model.pkl', 
         log_artifacts=True, 
         set_google_environment=True)

@@ -6,6 +6,9 @@ It also saves artifacts such as models and encoders for future predictions.
 
 """
 import os
+import sys
+sys.path.append(r'C:\Users\RaviB\GitHub\FlavorQuasar\calorie_predicter')
+
 import ast
 import pickle
 import json
