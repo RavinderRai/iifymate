@@ -21,6 +21,8 @@ from google.cloud import storage
 from google.cloud import bigquery
 from google.cloud import aiplatform
 import pandas_gbq
+import nltk
+nltk.download('stopwords')
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
