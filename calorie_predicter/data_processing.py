@@ -7,7 +7,7 @@ It also saves artifacts such as models and encoders for future predictions.
 """
 import os
 import sys
-sys.path.append(r'C:\Users\RaviB\GitHub\FlavorQuasar\calorie_predicter')
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
 
 import ast
 import pickle
@@ -26,7 +26,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from utils import (
+from calorie_predicter.utils import (
     round_up_to_nearest,
     filter_calories,
     sorted_binned_encoding,
