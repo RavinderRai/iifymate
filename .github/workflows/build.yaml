@@ -9,10 +9,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+
       - name: code checkout
         uses: actions/checkout@v2
 
       - name: install the gcloud cli
+        uses: google-github-actions/setup-gcloud@v0
         with:
           project_id: ${{ secrets.GOOGLE_PROJECT }}
           service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
@@ -21,7 +23,7 @@ jobs:
       - name: build and push the docker image
         env:
           GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
-        run: | 
+        run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev
           docker build -t us-central1-docker.pkg.dev/$GOOGLE_PROJECT/calorie-predictor-app/nginx:latest .
           docker push us-central1-docker.pkg.dev/$GOOGLE_PROJECT/calorie-predictor-app/nginx:latest
