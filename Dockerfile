@@ -45,8 +45,8 @@ USER appuser
 COPY . .
 
 # Expose the port that the application listens on.
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the application.
 #CMD flavorquasar 'calorie_predictor:app' --bind=0.0.0.0:8000
-CMD ["streamlit", "run", "calorie_predicter/app.py"]
+CMD ["streamlit", "run", "/app/calorie_predicter/app.py", "--server.port", "8080", "--server.address", "0.0.0.0"]
