@@ -24,6 +24,6 @@ jobs:
         env:
           GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
         run: |
-          gcloud auth print-access-token | docker login --username=_json_key --password-stdin us-central1-docker.pkg.dev
+          cat ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} | docker login --username=_json_key --password-stdin https://us-central1-docker.pkg.dev
           docker build -t us-central1-docker.pkg.dev/${GOOGLE_PROJECT}/calorie-predictor-app/cp80:v0 .
           docker push us-central1-docker.pkg.dev/${GOOGLE_PROJECT}/calorie-predictor-app/cp80:v0
