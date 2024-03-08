@@ -1,3 +1,3 @@
 FlavourQuasar App
 
-Generating Recipes from just the name.
+[Live Link.](https://streamlit-cp-go4e5g7vpq-uc.a.run.app)https://streamlit-cp-go4e5g7vpq-uc.a.run.app
