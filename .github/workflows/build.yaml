@@ -1,28 +1,29 @@
-name: Build and Push Docker Image
+name: Deploy Calorie Predictor
 
 on:
   push:
     branches:
-      - main
+      - 'main'
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      - name: code checkout
+        uses: actions/checkout@v2
 
-    - name: Login to Google Container Registry
-      uses: google-github-actions/auth@v2
-      with:
-        gcr: gcloud
-        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+      - name: install the gcloud cli
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GOOGLE_PROJECT }}
+          service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          export_default_credentials: true
 
-    - name: Build Docker image
-      run: |
-        docker build -t gcr.io/flavourquasar/streamlit-cp:v0 .
-        docker push gcr.io/flavourquasar/streamlit-cp:v0
+      - name: build and push the docker image
+        env:
+          GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
+        run: |
+          gcloud auth configure-docker gcr.io
+          docker build -t gcr.io/${GOOGLE_PROJECT}/streamlit-cp:v0 .
+          docker push gcr.io/${GOOGLE_PROJECT}/streamlit-cp:v0
