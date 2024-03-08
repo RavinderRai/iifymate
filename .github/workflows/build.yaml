@@ -24,6 +24,5 @@ jobs:
         env:
           GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
         run: |
-          gcloud auth configure-docker gcr.io
           docker build -t gcr.io/${GOOGLE_PROJECT}/streamlit-cp:v0 .
           docker push gcr.io/${GOOGLE_PROJECT}/streamlit-cp:v0
