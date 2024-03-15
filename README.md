@@ -1,12 +1,12 @@
 # FlavourQuasar App - Recipe Calorie Prediction
 
-[Live Link](https://streamlit-cp-go4e5g7vpq-uc.a.run.app)
-
-![FlavourQuasar Cover Photo](falbourquasar_coverphoto.jpeg)
-
 ## Introduction
 
 The aim of this project is to experiment with an easier way to count calories using machine learning. It is a common issue where people don't want to go through the effort to count calories, macro's, etc., but with machine learning we can fix that by making it easier by outputting this information given just the recipe name. For now, the calories are outputted as ranges of 300, as the goal is to just provide users with an estimate of the calorie content of a recipe before preparing it. 
+
+[Live Link](https://streamlit-cp-go4e5g7vpq-uc.a.run.app)
+
+<img src="flavourquasar_coverphoto.jpeg" alt="FlavourQuasar Cover Photo" width="500" height="350">
 
 ## Data Collection
 
@@ -20,7 +20,7 @@ The meal type and dish type variable both come as multilabel datasets and so wer
 
 Finally, the original target variable, being a continuous value for the calorie count, had a large range of values that was not intuitive. You can see the plot below of its distribution, but recipes being more than 2000 calories for 1 person is unusual so they must've been large meals for multiple people and thus were removed. To keep most of the data though, we made sure to only cut out data so that 90% was kept. Then, the calorie counts were modified to be binned into calorie ranges of 300 to make this a classification problem. 
 
-![Calorie Distribution Image](flavourquasar_calorie_distribution.jpg)
+<img src="flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
 
 ## Modeling
 
