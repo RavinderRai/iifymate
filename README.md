@@ -2,6 +2,8 @@
 
 [Live Link](https://streamlit-cp-go4e5g7vpq-uc.a.run.app)
 
+![FlavourQuasar Cover Photo](falbourquasar_coverphoto.jpeg)
+
 ## Introduction
 
 The aim of this project is to experiment with an easier way to count calories using machine learning. It is a common issue where people don't want to go through the effort to count calories, macro's, etc., but with machine learning we can fix that by making it easier by outputting this information given just the recipe name. For now, the calories are outputted as ranges of 300, as the goal is to just provide users with an estimate of the calorie content of a recipe before preparing it. 
