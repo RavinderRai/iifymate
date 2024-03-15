@@ -18,6 +18,10 @@ The final input variables in the end were the recipe name, with column name labe
 
 The meal type and dish type variable both come as multilabel datasets and so were collapsed into single/categorical variables using a priority list. Then, the dish type variable was split into 3 categories based on skewedness, since it had so many in it's raw form. Since the skewedness was obvious and apparent here, and there was sort of an order to it, this variable was label encoded for model training. Next, the meal type only had 5 categories and 3 were minority categories and somewhat similar, so these were combine into one, resulting in a 3 category column as well. But, the skewedness was not apparent here so this variable was one hot encoded instead. The last input variable was the recipe name, which was a text column. Thus, standard preprocessing steps, like removing stop words, lemmatization, etc., were done, right before tf-idf was applied for model training. 
 
+**Meal Type Calorie Distribution:**
+
+<img src="flavourquasar_calorie_distribution_meal_type.jpg" alt="MealType Calorie Distribution Image" width="1000" height="270">
+
 Finally, the original target variable, being a continuous value for the calorie count, had a large range of values that was not intuitive. You can see the plot below of its distribution, but recipes being more than 2000 calories for 1 person is unusual so they must've been large meals for multiple people and thus were removed. To keep most of the data though, we made sure to only cut out data so that 90% was kept. Then, the calorie counts were modified to be binned into calorie ranges of 300 to make this a classification problem. 
 
 <img src="flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
