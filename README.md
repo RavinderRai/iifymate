@@ -18,6 +18,8 @@ The meal type and dish type variable both come as multilabel datasets and so wer
 
 Finally, the original target variable, being a continuous value for the calorie count, had a large range of values that was not intuitive. You can see the plot below of its distribution, but recipes being more than 2000 calories for 1 person is unusual so they must've been large meals for multiple people and thus were removed. To keep most of the data though, we made sure to only cut out data so that 90% was kept. Then, the calorie counts were modified to be binned into calorie ranges of 300 to make this a classification problem. 
 
+![Calorie Distribution Image](flavourquasar_calorie_distribution.jpg)
+
 ## Modeling
 
 Various models were fitted but XGBoost with tf-idf pre-processing seems to be thes best so far. The trained model is evaluated using the cohen kappa score, which is a metric meant for multi-classification problems so works well here. Although it is a harsh metric as well, performance is still low at the moment so will continue to update, and tracking will be done with either mlflow or GCP. Furthermore, grid search is used to get the best model and parameters are tracked as well.
