@@ -10,7 +10,7 @@ from utils import priority_list_dish_type, priority_list_meal_type
 from predict import preprocess_input, predict_calories, upload_artifact_to_gcs, post_process, load_artifact_from_gcs, load_pickle
 
 def main():
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "flavourquasar-gcp-key.json"
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../flavourquasar-gcp-key.json"
 
     # Streamlit app layout
     st.title('Calorie Predictor')
@@ -29,7 +29,7 @@ def main():
     # Process user input and predict calories
     if st.button('Get Calories'):
         user_input = preprocess_input(user_input_raw)
-        predicted_calories = predicted_calorie_range = predict_calories(
+        predicted_calories = predict_calories(
             user_input, num_of_classes=13, 
             artifact_path='training/XGBoost_model.pkl', 
             log_artifacts=False, 
