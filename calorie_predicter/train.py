@@ -8,8 +8,6 @@ parameters, and metrics with MLflow.
 import os
 import json
 import pickle
-import logging
-logging.basicConfig(level=logging.INFO)
 import pandas as pd
 import mlflow
 import mlflow.sklearn
@@ -18,6 +16,8 @@ from google.cloud import bigquery, aiplatform, storage
 from sklearn.metrics import cohen_kappa_score, make_scorer, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
+import logging
+logging.basicConfig(level=logging.INFO)
 
 def load_data_from_vertex_ai(client, table_id, dataset_id='training_data', project_id='flavourquasar'):
     query = f"SELECT * FROM {project_id}.{dataset_id}.{table_id}"

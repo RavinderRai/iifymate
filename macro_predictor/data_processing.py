@@ -252,7 +252,6 @@ if __name__ == "__main__":
     X_train, X_test, svd_fitted = SVD_reduction(X_train, X_test, n_components=1000)
 
     y_train, y_test = np.log1p(y_train), np.log1p(y_test)
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     upload_params_list = [
         {'df_train_test': X_train, 'display_name': 'X_train_table', 'table_id': 'X_train'},
