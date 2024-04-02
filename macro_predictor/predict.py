@@ -105,6 +105,16 @@ def lemmatizing_reviews(review):
     return lemmatized_review
 
 if __name__ == "__main__":
+    health_label_options = ['Vegan', 'Vegetarian', 'Pescatarian', 'Paleo', 'Red-Meat-Free', 'Mediterranean', 'Balanced']
+    print("Select an option:")
+    for i, option in enumerate(health_label_options, start=1):
+        print(f"{i}. {option}")
+
+    health_label_choice = input("Enter the health label: ")
+    health_label_choice = int(health_label_choice)
+    health_label = health_label_options[health_label_choice - 1]
+    user_input_recipe = input("Enter the recipe name: ")
+
     gcp_config_file = '../flavourquasar-gcp-key.json'
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
 
@@ -140,3 +150,8 @@ if __name__ == "__main__":
     predicted_fat = np.expm1(XGBoost_fat_model.predict(full_user_input)[0])
     predicted_carbs = np.expm1(XGBoost_carbs_model.predict(full_user_input)[0])
     predicted_protein = np.expm1(XGBoost_protein_model.predict(full_user_input)[0])
+
+    calories = 9*predicted_fat + 4*(predicted_carbs + predicted_protein)
+
+    print(user_input_recipe + f" has {int(predicted_carbs)} grams of carbs, {int(predicted_fat)} grams of fat, and {int(predicted_protein)} grams of protein")
+    print(f"This totals to {int(calories)} calories")
