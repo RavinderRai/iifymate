@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.Spinner
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
+        val userInput = editText.text.toString()
+
         val spinner: Spinner = findViewById<Spinner>(R.id.spinner)
         val adapter: ArrayAdapter<CharSequence> = ArrayAdapter.createFromResource(
             this,
@@ -35,8 +39,11 @@ class MainActivity : ComponentActivity() {
                 val selectedItem = parent?.getItemAtPosition(position).toString()
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Handle no item selected if needed
+                val defaultSelectedItem = "Balanced"
             }
+
         }
+
+
     }
 }

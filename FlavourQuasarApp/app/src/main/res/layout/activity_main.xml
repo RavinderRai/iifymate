@@ -27,4 +27,22 @@
         android:layout_marginStart="30dp"
         android:layout_marginTop="320dp" />
 
+    <EditText
+        android:id="@+id/input_recipe_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="360dp"
+        android:hint="Enter Recipe Name"
+        android:autofillHints=""
+        android:inputType="text" />
+
+    <Button
+        android:id="@+id/enter_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="200dp"
+        android:layout_marginTop="400dp"
+        android:text="Calculate Macros" />
+
 </FrameLayout>
