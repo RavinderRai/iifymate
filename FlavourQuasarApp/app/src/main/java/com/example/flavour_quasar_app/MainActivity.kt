@@ -1,10 +1,14 @@
 package com.example.flavour_quasar_app
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.Spinner
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,6 +48,20 @@ class MainActivity : ComponentActivity() {
 
         }
 
+        val button: Button = findViewById(R.id.enter_button)
+        button.setOnClickListener() {
+            val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as? LayoutInflater
+            inflater?.let { layoutInflater ->
+                val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
 
+                val popupWindow = PopupWindow(
+                    popupView,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+                popupWindow.showAsDropDown(button)
+            }
+        }
     }
 }
