@@ -1,6 +1,7 @@
 package com.example.flavour_quasar_app
 
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.flavour_quasar_app.ui.theme.Flavour_Quasar_AppTheme
+import com.example.flavour_quasar_app.CosineSimilarity
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +49,8 @@ class MainActivity : ComponentActivity() {
             }
 
         }
+
+        val res = CosineSimilarity.myMethod("Test")
 
         val button: Button = findViewById(R.id.enter_button)
         button.setOnClickListener() {
