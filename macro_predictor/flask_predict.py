@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify
 import pickle
+import json
+import pandas_gbq
+from sklearn.metrics.pairwise import cosine_similarity
 import os
+import ast
 from google.cloud import storage
 import numpy as np
 from nltk.corpus import stopwords
@@ -59,8 +63,90 @@ def load_artifact_from_gcs(artifact_path, bucket_name='macro_predictor'):
 
     return loaded_artifact
 
-@app.route('/predict', methods=['POST'])
-def predict():
+def get_similar_ingredients(user_recipe_name, df, tfidf_fitted, recipe_name_col='label', ingredients_col='ingredientLines'):
+    """
+    Retrieves a list of ingredients similar to the user input recipe name from a given dataset.
+    Parameters:
+        user_recipe_name (str): The name of the user input recipe to find ingredients for.
+        df (DataFrame): The DataFrame containing recipe data, where each row represents a recipe.
+        tfidf_fitted (object): The fitted TF-IDF vectorizer used initially from the data_processing.py file.
+        recipe_name_col (str, optional): The name of the column in the DataFrame containing recipe names. Default is 'label'.
+        ingredients_col (str, optional): The name of the column in the DataFrame containing ingredient lists. Default is 'ingredientLines'.
+
+    Returns:
+        list: A list of ingredients corresponding to the user input recipe name. If an exact match is found in the DataFrame, the ingredients of that recipe are returned. Otherwise, the ingredients of the most similar recipe based on name similarity using TF-IDF cosine similarity are returned.
+    """
+    recipe_names_df = df[recipe_name_col]
+
+    #if the recipe is a direct match with something in our database, then return that
+    for idx in df.index:
+        if user_recipe_name == recipe_names_df[idx]:
+            return df['ingredientLines'][idx]
+    
+    #otherwise, take the cosine similarity, for which we need to preprocess all the text and perform tfidf first
+    user_recipe_name = lemmatizing_reviews(remove_stop_words(user_recipe_name))
+    user_recipe_name = tfidf_fitted.transform([user_recipe_name])
+
+    recipe_names_tdidf = recipe_names_df.apply(remove_stop_words)
+    recipe_names_tdidf = recipe_names_tdidf.apply(lemmatizing_reviews)
+    recipe_names_tdidf = tfidf_fitted.transform(recipe_names_tdidf)
+
+    #get the cosine similarities and take the max to get the most relevant recipe's index
+    cosine_similarities = cosine_similarity(user_recipe_name, recipe_names_tdidf)
+    most_similar_index = cosine_similarities.argmax()
+
+    #use that index to return the ingredients list
+    return df.loc[most_similar_index, ingredients_col]
+
+def comma_to_bracket(ingredient_list):
+    """
+    Input: ingredient_list (str): a list of strings, like ingredients of a recipe.
+    Output: recipe (str): commas in individual elements from input string are removed, then they are all joined together with a comma, so commas seperate each ingredient now.
+    """
+    processed_ingredients = []
+    for ingredient in ingredient_list:
+        parts = ingredient.split(',', 1)  # Split at the first comma
+        if len(parts) > 1:  # Check if there is a comma
+            # Check if the part after the comma is already in brackets
+            if '(' not in parts[1] and ')' not in parts[1]:
+                parts[1] = f'({parts[1].strip()})'  # Put it in brackets
+        processed_ingredients.append(' '.join(parts))
+
+    # Join the processed strings with a comma and space now that we removed the commas in the individual strings
+    recipe = ', '.join(processed_ingredients)
+
+    return recipe
+
+@app.route('/predict_ingredients', methods=['POST'])
+def predict_ingredients():
+    user_input_recipe = request.get_json(force=True)
+    user_input_recipe = user_input_recipe['user_input']
+
+    gcp_config_file = '../flavourquasar-gcp-key.json'
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
+
+    with open(gcp_config_file, 'r') as file:
+                    gcp_config_data = json.load(file)
+    project_id = gcp_config_data.get('project_id', None)
+
+    query = """
+        SELECT label, ingredientLines
+        FROM `flavourquasar.edamam_recipes.edamam_raw_data`
+    """
+
+    df = pandas_gbq.read_gbq(query, project_id=project_id)
+    df['ingredientLines'] = df['ingredientLines'].apply(ast.literal_eval)
+
+    tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
+    cosine_ingred = get_similar_ingredients(user_input_recipe, df, tfidf_fitted)
+
+    ingredients_lst = comma_to_bracket(cosine_ingred)
+    ingredients_lst = [item.strip() for item in ingredients_lst.split(',')] # converting ingredients into a list with each ingredient
+
+    return jsonify(ingredients_lst)
+
+@app.route('/predict_macros', methods=['POST'])
+def predict_macros():
     user_input = request.get_json(force=True)
     user_input = user_input['user_input']
 

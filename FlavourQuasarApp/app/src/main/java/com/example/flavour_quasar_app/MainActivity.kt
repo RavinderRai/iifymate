@@ -12,6 +12,8 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.Spinner
 import androidx.activity.ComponentActivity
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.flavour_quasar_app.ui.theme.Flavour_Quasar_AppTheme
 import com.example.flavour_quasar_app.CosineSimilarity
+import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +54,12 @@ class MainActivity : ComponentActivity() {
 
         }
 
-        val res = CosineSimilarity.myMethod("Test")
+        val url = "http://127.0.0.1:5000/predict_ingredients" // Assuming your Flask app is running on the same machine as the Android emulator or device
+
+        val userInputRecipe = "Black Bean Tacos"
+
+        val client = HttpClient(CIO)
+        
 
         val button: Button = findViewById(R.id.enter_button)
         button.setOnClickListener() {
