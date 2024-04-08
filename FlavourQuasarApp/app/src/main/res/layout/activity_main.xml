@@ -45,4 +45,12 @@
         android:layout_marginTop="400dp"
         android:text="Calculate Macros" />
 
+    <TextView
+        android:id="@+id/debugger"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="180dp"
+        android:layout_marginTop="500dp"
+        android:text="TextView" />
+
 </FrameLayout>

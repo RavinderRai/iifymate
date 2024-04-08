@@ -2,6 +2,7 @@ package com.example.flavour_quasar_app
 
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
@@ -11,6 +12,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -22,8 +24,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
 import com.example.flavour_quasar_app.ui.theme.Flavour_Quasar_AppTheme
-import com.example.flavour_quasar_app.CosineSimilarity
+//import com.example.flavour_quasar_app.CosineSimilarity
+import io.ktor.client.request.post
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
@@ -54,12 +62,26 @@ class MainActivity : ComponentActivity() {
 
         }
 
-        val url = "http://127.0.0.1:5000/predict_ingredients" // Assuming your Flask app is running on the same machine as the Android emulator or device
 
+        //val url = "http://127.0.0.1:5000/predict_ingredients"
+        val url = "http://192.168.0.165:5000/predict_ingredients"
         val userInputRecipe = "Black Bean Tacos"
 
-        val client = HttpClient(CIO)
-        
+        runBlocking {
+            try {
+                val client = HttpClient()
+                val response: HttpResponse = client.post(url) {
+                    val jsonInput = JSONObject().apply {
+                        put("user_input", userInputRecipe)
+                    }
+                    // Set the JSON object as the body of the request
+                    setBody(jsonInput.toString())
+                }
+                Log.d("Response", response.toString())
+            } catch (e: Exception) {
+                Log.e("Response", "Error occurred: ${e.message}")
+            }
+        }
 
         val button: Button = findViewById(R.id.enter_button)
         button.setOnClickListener() {
