@@ -12,8 +12,6 @@ from nltk.stem import WordNetLemmatizer
 
 app = Flask(__name__)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
 
 def remove_stop_words(review):
     english_stop_words = stopwords.words('english')
@@ -123,7 +121,12 @@ def comma_to_bracket(ingredient_list):
 @app.route('/predict_ingredients', methods=['POST'])
 def predict_ingredients():
     user_input_recipe = request.get_json(force=True)
-    user_input_recipe = user_input_recipe['user_input']
+    user_input_recipe = user_input_recipe.get('user_input', None)
+    if user_input_recipe is None:
+            # Handle case where 'user_input' is missing
+            return jsonify({'error': 'Missing user_input'}), 400
+    
+    #user_input_recipe = user_input_recipe['user_input']
 
     gcp_config_file = '../flavourquasar-gcp-key.json'
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
@@ -184,4 +187,4 @@ def predict_macros():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

@@ -31,6 +31,9 @@ import io.ktor.client.request.post
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.readText
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -65,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
         //val url = "http://127.0.0.1:5000/predict_ingredients"
         val url = "http://192.168.0.165:5000/predict_ingredients"
-        val userInputRecipe = "Black Bean Tacos"
+        val userInputRecipe: String = "Black Bean Tacos"
 
         runBlocking {
             try {
@@ -78,6 +81,15 @@ class MainActivity : ComponentActivity() {
                     setBody(jsonInput.toString())
                 }
                 Log.d("Response", response.toString())
+
+                if (response.status == HttpStatusCode.OK) {
+                    // Read the response body as a string
+                    val responseBody = response.bodyAsText()
+                    // Log the response body
+                    Log.d("Response", "Response body: $responseBody")
+                } else {
+                    Log.e("Response", "Error: ${response.status}")
+                }
             } catch (e: Exception) {
                 Log.e("Response", "Error occurred: ${e.message}")
             }

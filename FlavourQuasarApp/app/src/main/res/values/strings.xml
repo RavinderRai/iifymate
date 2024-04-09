@@ -6,10 +6,9 @@
         <item>Balanced</item>
         <item>Vegan</item>
         <item>Vegetarian</item>
-        <item>Item 3</item>
-        <item>Mediterranean</item>
         <item>Pescatarian</item>
-        <item>asdf</item>
-        <item>Item 4</item>
+        <item>Paleo</item>
+        <item>Red-Meat-Free</item>
+        <item>Mediterranean</item>
     </string-array>
 </resources>
