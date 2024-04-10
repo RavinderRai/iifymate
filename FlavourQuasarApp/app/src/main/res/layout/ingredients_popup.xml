@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -14,22 +15,34 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Add EditText fields inside the LinearLayout -->
-            <EditText
-                android:id="@+id/editText1"
+            <ListView
+                android:id="@+id/listView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter text 1" />
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
 
-            <EditText
-                android:id="@+id/editText2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter text 2" />
 
             <!-- Add more EditText fields as needed -->
 
         </LinearLayout>
     </ScrollView>
+
+    <EditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter item"
+        android:inputType="text"/>
+
+    <Button
+        android:id="@+id/addButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add"/>
+    <Button
+        android:id="@+id/removeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Remove"/>
 
 </LinearLayout>

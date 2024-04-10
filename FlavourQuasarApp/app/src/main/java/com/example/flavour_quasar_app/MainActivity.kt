@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.PopupWindow
 import android.widget.Spinner
 import android.widget.TextView
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
         }
 
-
+        /*
         //val url = "http://127.0.0.1:5000/predict_ingredients"
         val url = "http://192.168.0.165:5000/predict_ingredients"
         val userInputRecipe: String = "Black Bean Tacos"
@@ -94,12 +95,40 @@ class MainActivity : ComponentActivity() {
                 Log.e("Response", "Error occurred: ${e.message}")
             }
         }
+         */
 
         val button: Button = findViewById(R.id.enter_button)
         button.setOnClickListener() {
             val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as? LayoutInflater
             inflater?.let { layoutInflater ->
                 val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
+
+                val editText = popupView.findViewById<EditText>(R.id.editText)
+                val addButton = popupView.findViewById<Button>(R.id.addButton)
+                val removeButton = popupView.findViewById<Button>(R.id.removeButton)
+                val listView = popupView.findViewById<ListView>(R.id.listView)
+
+                val itemList = mutableListOf("Item 1", "Item 2", "Item 3")
+
+                val adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, itemList)
+                listView.adapter = adapter
+
+                addButton.setOnClickListener {
+                    val newItem = editText.text.toString().trim()
+                    if (newItem.isNotEmpty()) {
+                        itemList.add(newItem)
+                        adapter.notifyDataSetChanged()
+                        editText.text.clear()
+                    }
+                }
+
+                removeButton.setOnClickListener {
+                    val position = listView.checkedItemPosition
+                    if (position != ListView.INVALID_POSITION) {
+                        itemList.removeAt(position)
+                        adapter.notifyDataSetChanged()
+                    }
+                }
 
                 val popupWindow = PopupWindow(
                     popupView,
