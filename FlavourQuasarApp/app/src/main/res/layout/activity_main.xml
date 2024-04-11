@@ -37,20 +37,20 @@
         android:autofillHints=""
         android:inputType="text" />
 
+
     <Button
         android:id="@+id/enter_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="200dp"
         android:layout_marginTop="400dp"
-        android:text="Calculate Macros" />
+        android:text="Open Popup"
+        android:layout_centerInParent="true"/>
 
-    <TextView
-        android:id="@+id/debugger"
-        android:layout_width="wrap_content"
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="180dp"
-        android:layout_marginTop="500dp"
-        android:text="TextView" />
+        android:layout_below="@id/enter_button"/>
 
 </FrameLayout>

@@ -1,17 +1,21 @@
 package com.example.flavour_quasar_app
 
+import android.graphics.Color
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.PopupWindow
+import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -40,6 +44,8 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
+    private lateinit var buttonOpenPopup: Button
+    private lateinit var scrollView: ScrollView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -97,47 +103,107 @@ class MainActivity : ComponentActivity() {
         }
          */
 
-        val button: Button = findViewById(R.id.enter_button)
-        button.setOnClickListener() {
-            val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as? LayoutInflater
-            inflater?.let { layoutInflater ->
-                val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
-
-                val editText = popupView.findViewById<EditText>(R.id.editText)
-                val addButton = popupView.findViewById<Button>(R.id.addButton)
-                val removeButton = popupView.findViewById<Button>(R.id.removeButton)
-                val listView = popupView.findViewById<ListView>(R.id.listView)
-
-                val itemList = mutableListOf("Item 1", "Item 2", "Item 3")
-
-                val adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, itemList)
-                listView.adapter = adapter
-
-                addButton.setOnClickListener {
-                    val newItem = editText.text.toString().trim()
-                    if (newItem.isNotEmpty()) {
-                        itemList.add(newItem)
-                        adapter.notifyDataSetChanged()
-                        editText.text.clear()
-                    }
-                }
-
-                removeButton.setOnClickListener {
-                    val position = listView.checkedItemPosition
-                    if (position != ListView.INVALID_POSITION) {
-                        itemList.removeAt(position)
-                        adapter.notifyDataSetChanged()
-                    }
-                }
-
-                val popupWindow = PopupWindow(
-                    popupView,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-
-                popupWindow.showAsDropDown(button)
-            }
+        buttonOpenPopup = findViewById(R.id.enter_button)
+        scrollView = findViewById(R.id.scrollView)
+        //var scrollView = findViewById(R.id.scrollView)
+        buttonOpenPopup.setOnClickListener() {
+            showPopupWindow()
+            // val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as? LayoutInflater
+            // inflater?.let { layoutInflater ->
+            //    val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
+                //val itemList = mutableListOf("Item 1", "Item 2", "Item 3")
+            //}
         }
+    }
+    private fun showPopupWindow() {
+        val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
+
+        val popupWindow = PopupWindow(
+            popupView,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        val editTextContainer = popupView.findViewById<LinearLayout>(R.id.editTextContainer)
+
+        val listOfItems = mutableListOf("Item 1", "Item 2", "Item 3")
+        for (item in listOfItems) {
+            val horizontalLayout = LinearLayout(this)
+            horizontalLayout.orientation = LinearLayout.HORIZONTAL
+
+            val editText = createEditText(item)
+            //val editText = EditText(this)
+            //editText.setText(item)
+
+            horizontalLayout.addView(editText)
+
+            val closeButton = createCloseButton()
+            closeButton.setOnClickListener {
+                editTextContainer.removeView(horizontalLayout)
+                //editTextContainer.removeView(closeButton)
+            }
+            horizontalLayout.addView(closeButton)
+            editTextContainer.addView(horizontalLayout)
+        }
+
+        val buttonAddEditText = popupView.findViewById<Button>(R.id.buttonAddEditText)
+        buttonAddEditText.setOnClickListener {
+            // Create a horizontal LinearLayout to hold EditText and close button
+            val horizontalLayout = LinearLayout(this)
+            horizontalLayout.orientation = LinearLayout.HORIZONTAL
+
+            // Add EditText
+            //val newEditText = EditText(this)
+            //newEditText.setText("")
+            val newEditText = createEditText("")
+            horizontalLayout.addView(newEditText)
+
+            // Add a close button next to the new EditText
+            val closeButton = createCloseButton()
+            closeButton.setOnClickListener {
+                editTextContainer.removeView(horizontalLayout)
+            }
+            horizontalLayout.addView(closeButton)
+            editTextContainer.addView(horizontalLayout)
+
+            //newEditText.setOnClickListener {
+            //    editTextContainer.removeView(newEditText)
+            //}
+        }
+
+
+
+        // Show the popup window
+        popupWindow.showAtLocation(buttonOpenPopup, Gravity.CENTER, 0, 0)
+    }
+    private fun createCloseButton(): ImageButton {
+        val closeButton = ImageButton(this)
+        closeButton.setImageResource(android.R.drawable.ic_input_delete)
+        closeButton.setBackgroundColor(Color.argb(128, 64, 64, 64))
+        //closeButton.setPadding(10, 10, 10, 10)
+        val params = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        closeButton.layoutParams = params
+        return closeButton
+    }
+    private fun createEditText(text: String): EditText {
+        val editText = EditText(this)
+
+        // Set text
+        editText.setText(text)
+
+        // Set width
+        val params = LinearLayout.LayoutParams(
+            0, // Set width to 0 to allow weight to determine width
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.weight = 1f // Set weight to 1 to make EditText occupy available space evenly
+        editText.layoutParams = params
+
+        return editText
     }
 }
