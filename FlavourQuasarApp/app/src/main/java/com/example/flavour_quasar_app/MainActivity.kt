@@ -1,6 +1,7 @@
 package com.example.flavour_quasar_app
 
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
@@ -120,10 +121,11 @@ class MainActivity : ComponentActivity() {
 
         val popupWindow = PopupWindow(
             popupView,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
+            (resources.displayMetrics.widthPixels * 0.8).toInt(), // Set width to 80% of screen width
+            (resources.displayMetrics.heightPixels * 0.8).toInt(), // Set height to 60% of screen height
             true
         )
+        popupWindow.setBackgroundDrawable(ColorDrawable(Color.GRAY))
 
         val editTextContainer = popupView.findViewById<LinearLayout>(R.id.editTextContainer)
 
@@ -172,7 +174,10 @@ class MainActivity : ComponentActivity() {
             //}
         }
 
-
+        val buttonGetMacros = findViewById<Button>(R.id.buttonGetMacros)
+        buttonGetMacros.setOnClickListener {
+            val placeHolderFat = 45
+        }
 
         // Show the popup window
         popupWindow.showAtLocation(buttonOpenPopup, Gravity.CENTER, 0, 0)
@@ -201,6 +206,7 @@ class MainActivity : ComponentActivity() {
             0, // Set width to 0 to allow weight to determine width
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+        params.setMargins(0, 0, 20, 0)
         params.weight = 1f // Set weight to 1 to make EditText occupy available space evenly
         editText.layoutParams = params
 
