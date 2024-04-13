@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
 }
 
+
+
 android {
     namespace = "com.example.flavour_quasar_app"
     compileSdk = 34
@@ -47,6 +49,7 @@ android {
     packagingOptions {
         exclude("META-INF/INDEX.LIST")
     }
+
 }
 
 dependencies {
@@ -60,6 +63,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     //implementation("com.google.cloud:google-cloud-bigquery:2.6.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("io.ktor:ktor-client-core:2.3.9")
     implementation("io.ktor:ktor-client-cio:2.3.9")
     testImplementation(libs.junit)

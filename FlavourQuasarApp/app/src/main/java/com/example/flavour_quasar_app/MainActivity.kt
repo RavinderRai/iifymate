@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
+
 class MainActivity : ComponentActivity() {
     private lateinit var buttonOpenPopup: Button
     private lateinit var scrollView: ScrollView
@@ -176,7 +177,10 @@ class MainActivity : ComponentActivity() {
 
         val buttonGetMacros = findViewById<Button>(R.id.buttonGetMacros)
         buttonGetMacros.setOnClickListener {
-            val placeHolderFat = 45
+            val placeHolderFat = 30
+            val placeHolderCarbs = 55
+            val placeHolderProtein = 35
+            val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
         }
 
         // Show the popup window
