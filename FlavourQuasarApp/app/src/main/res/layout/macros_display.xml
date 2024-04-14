@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -37,10 +37,10 @@
         android:layout_height="31dp"
         android:layout_above="@+id/fat"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="74dp"
-        android:layout_marginEnd="96dp"
-        android:layout_marginBottom="27dp"
-        android:layout_toStartOf="@+id/textView4"
+        android:layout_marginStart="81dp"
+        android:layout_marginEnd="89dp"
+        android:layout_marginBottom="30dp"
+        android:layout_toStartOf="@+id/proteinCount"
         android:text="Protein" />
 
     <TextView
@@ -77,14 +77,14 @@
 
     <TextView
         android:id="@+id/carbsCount"
-        android:layout_width="77dp"
-        android:layout_height="20dp"
+        android:layout_width="76dp"
+        android:layout_height="35dp"
         android:layout_above="@+id/proteinCount"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="532dp"
-        android:layout_marginEnd="71dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginTop="487dp"
+        android:layout_marginEnd="61dp"
+        android:layout_marginBottom="62dp"
         android:text="TextView" />
 
     <TextView
@@ -94,10 +94,10 @@
         android:layout_above="@+id/protein"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_marginStart="83dp"
-        android:layout_marginTop="525dp"
-        android:layout_marginEnd="122dp"
-        android:layout_marginBottom="27dp"
+        android:layout_marginStart="87dp"
+        android:layout_marginTop="493dp"
+        android:layout_marginEnd="118dp"
+        android:layout_marginBottom="56dp"
         android:layout_toStartOf="@+id/carbsCount"
         android:text="Carbs" />
 
@@ -132,60 +132,11 @@
         android:id="@+id/pieChart"
         android:layout_width="wrap_content"
         android:layout_height="171dp"
-        android:layout_below="@id/idTVHead"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
         android:layout_marginStart="91dp"
         android:layout_marginTop="245dp"
         android:layout_marginEnd="94dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/pieChart"
-        android:layout_marginTop="40dp"
-        android:orientation="horizontal"
-        android:weightSum="3">
-
-    <TextView
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="3dp"
-        android:layout_weight="1"
-        android:drawableLeft="@drawable/ic_circle"
-        android:drawableTint="@color/purple_200"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="Android"
-        android:textAlignment="center"
-        android:textColor="@color/black" />
-
-    <TextView
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="3dp"
-        android:layout_weight="1"
-        android:drawableLeft="@drawable/ic_circle"
-        android:drawableTint="@color/yellow"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="Apple"
-        android:textAlignment="center"
-        android:textColor="@color/black" />
-
-    <TextView
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="3dp"
-        android:layout_weight="1"
-        android:drawableLeft="@drawable/ic_circle"
-        android:drawableTint="@color/red"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="Microsoft"
-        android:textAlignment="center"
-        android:textColor="@color/black" />
-    </LinearLayout>
 
 
 </RelativeLayout>

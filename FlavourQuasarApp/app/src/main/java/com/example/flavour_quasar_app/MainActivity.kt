@@ -1,5 +1,6 @@
 package com.example.flavour_quasar_app
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -175,12 +176,22 @@ class MainActivity : ComponentActivity() {
             //}
         }
 
-        val buttonGetMacros = findViewById<Button>(R.id.buttonGetMacros)
+        val buttonGetMacros = popupView.findViewById<Button>(R.id.buttonGetMacros)
         buttonGetMacros.setOnClickListener {
             val placeHolderFat = 30
             val placeHolderCarbs = 55
             val placeHolderProtein = 35
             val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
+
+            val intent = Intent(this, MacrosDisplay::class.java)
+            // Pass data to the new activity if needed
+            intent.putExtra("calories", calories)
+            intent.putExtra("fat", placeHolderFat)
+            intent.putExtra("carbs", placeHolderCarbs)
+            intent.putExtra("protein", placeHolderProtein)
+            startActivity(intent)
+
+            popupWindow.dismiss()
         }
 
         // Show the popup window
@@ -216,4 +227,5 @@ class MainActivity : ComponentActivity() {
 
         return editText
     }
+
 }

@@ -26,6 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MacrosDisplay"
+            android:label="Macros_Display"
+            android:theme="@style/Theme.Flavour_Quasar_App">
+        </activity>
     </application>
 
 </manifest>
