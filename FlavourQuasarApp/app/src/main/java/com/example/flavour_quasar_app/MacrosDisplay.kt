@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.animation.Easing
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
@@ -80,12 +81,12 @@ class MacrosDisplay : ComponentActivity() {
         // on below line we are creating array list and
         // adding data to it to display in pie chart
         val entries: ArrayList<PieEntry> = ArrayList()
-        entries.add(PieEntry(70f))
-        entries.add(PieEntry(20f))
-        entries.add(PieEntry(10f))
+        entries.add(PieEntry(70f)) //carbs
+        entries.add(PieEntry(20f)) // protein
+        entries.add(PieEntry(10f)) // fat
 
         // on below line we are setting pie data set
-        val dataSet = PieDataSet(entries, "Mobile OS")
+        val dataSet = PieDataSet(entries, "Macros")
 
         // on below line we are setting icons.
         dataSet.setDrawIcons(false)
@@ -97,9 +98,10 @@ class MacrosDisplay : ComponentActivity() {
 
         // add a lot of colors to list
         val colors: ArrayList<Int> = ArrayList()
-        colors.add(resources.getColor(R.color.purple_200))
-        colors.add(resources.getColor(R.color.yellow))
-        colors.add(resources.getColor(R.color.red))
+        colors.add(ContextCompat.getColor(this, R.color.light_green))
+        colors.add(ContextCompat.getColor(this, R.color.light_blue))
+        colors.add(ContextCompat.getColor(this, R.color.light_yellow))
+
 
         // on below line we are setting colors.
         dataSet.colors = colors
@@ -118,7 +120,7 @@ class MacrosDisplay : ComponentActivity() {
         // loading chart
         pieChart.invalidate()
     }
-    fun setTextViewText(textViewId: Int, text: String) {
+    private fun setTextViewText(textViewId: Int, text: String) {
         val textView = findViewById<TextView>(textViewId)
         textView.text = text
     }
