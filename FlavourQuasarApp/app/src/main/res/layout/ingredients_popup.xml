@@ -6,42 +6,67 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <ScrollView
+    <TextView
+        android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textColor="@color/black"
+        android:textSize="17sp"
+        android:text="@string/ingredients_popup_info" />
+
+    <ScrollView
+        android:layout_width="394dp"
+        android:layout_height="545dp"
         android:layout_above="@id/buttonContainer"
-        android:layout_alignParentTop="true">
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="72dp"
+        android:layout_marginBottom="12dp">
 
         <LinearLayout
             android:id="@+id/editTextContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
         </LinearLayout>
     </ScrollView>
 
 
-
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/buttonContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="86dp"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/buttonAddEditText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Ingredient" />
+            android:layout_width="173dp"
+            android:layout_height="70dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="00dp"
+            android:layout_marginBottom="10dp"
+            android:layout_toStartOf="@+id/buttonGetMacros"
+            android:text="@string/add_ingredient" />
 
         <Button
             android:id="@+id/buttonGetMacros"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Predict Macros" />
-    </LinearLayout>
+            android:layout_width="160dp"
+            android:layout_height="70dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp"
+            android:text="@string/predict_macros_button" />
+    </RelativeLayout>
 
 
 </RelativeLayout>

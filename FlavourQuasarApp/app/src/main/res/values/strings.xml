@@ -1,7 +1,14 @@
 <resources>
     <string name="app_name">Flavour_Quasar_App</string>
-    <string name="app_title">Flavour Quasar: \nThe IIFYM Companion</string>
-    <string name="functionality_description">Track macros effortlessly \nwithout having to manually log every ingredient using AI</string>
+    <string name="app_title">IIFYMate</string>
+    <string name="app_subtitle">Your IIFYM AI Companion</string>
+    <string name="functionality_description">Your IIFYM AI Companion: Get your meal\'s macros with just the diet type and name</string>
+    <string name="recipe_input">Enter Recipe Name</string>
+    <string name="ingredients_button">Edit Ingredients</string>
+    <string name="predict_macros_button">Get Macro\'s</string>
+    <string name="ingredients_popup_info">We predict the macros by first predicting the meal\'s ingredients. Here you can edit the ingredients for greater accuracy.</string>
+    <string name="add_ingredient">Add Ingredient</string>
+    <string name="macros_display_back_button">Change Recipe</string>
     <string-array name="dropdown_items">
         <item>Balanced</item>
         <item>Vegan</item>

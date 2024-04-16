@@ -6,56 +6,60 @@
 
     <TextView
         android:id="@+id/macro_predictor_title"
-        android:textSize="20sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="100dp"
-        android:layout_marginTop="220dp"
-        android:text="@string/app_title" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="170dp"
+        android:text="@string/app_title"
+        android:textSize="40sp"
+        android:textColor="@color/black" />
+
 
     <TextView
         android:id="@+id/functionality_description"
-        android:layout_width="wrap_content"
+        android:layout_width="360dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="275dp"
-        android:text="@string/functionality_description" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="245dp"
+        android:gravity="center_horizontal"
+        android:text="@string/functionality_description"
+        android:textColor="@color/black"
+        android:textSize="19sp" />
 
     <Spinner
         android:id="@+id/spinner"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="320dp" />
+        android:layout_width="360dp"
+        android:layout_height="46dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="315dp" />
 
     <EditText
         android:id="@+id/input_recipe_name"
-        android:layout_width="match_parent"
+        android:layout_width="360dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="360dp"
-        android:hint="Enter Recipe Name"
         android:autofillHints=""
-        android:inputType="text" />
+        android:hint="@string/recipe_input"
+        android:inputType="text"
+        android:textSize="25sp" />
 
     <Button
         android:id="@+id/get_macros"
-        android:layout_width="wrap_content"
+        android:layout_width="170dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="230dp"
-        android:layout_marginTop="400dp"
-        android:text="See Macro's ->"
-        android:layout_centerInParent="true"/>
+        android:layout_marginStart="205dp"
+        android:layout_marginTop="420dp"
+        android:text="@string/predict_macros_button" />
 
 
     <Button
         android:id="@+id/enter_button"
-        android:layout_width="wrap_content"
+        android:layout_width="170dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="400dp"
-        android:text="Customize Ingredients"
-        android:layout_centerInParent="true"/>
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="420dp"
+        android:text="@string/ingredients_button" />
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -65,19 +69,21 @@
 
 
     <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="match_parent"
-        android:layout_height="290dp"
-        android:layout_marginStart="0dp"
-        android:layout_marginTop="440dp"
-        android:src="@drawable/food_in_paper_bag" />
-
-    <ImageView
         android:id="@+id/imageView3"
         android:layout_width="489dp"
         android:layout_height="275dp"
         android:layout_marginStart="-40dp"
-        android:layout_marginTop="0dp"
-        android:src="@drawable/foods_as_border" />
+        android:layout_marginTop="-65dp"
+        android:src="@drawable/foods_as_border"
+        android:rotation="0" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="451dp"
+        android:layout_height="169dp"
+        android:layout_marginStart="-20dp"
+        android:layout_marginTop="570dp"
+        android:rotation="0"
+        android:src="@drawable/veggies_border" />
 
 </FrameLayout>

@@ -123,8 +123,8 @@ class MainActivity : ComponentActivity() {
 
         val popupWindow = PopupWindow(
             popupView,
-            (resources.displayMetrics.widthPixels * 0.8).toInt(), // Set width to 80% of screen width
-            (resources.displayMetrics.heightPixels * 0.8).toInt(), // Set height to 60% of screen height
+            (resources.displayMetrics.widthPixels * 0.9).toInt(), // Set width to 80% of screen width
+            (resources.displayMetrics.heightPixels * 0.85).toInt(), // Set height to 60% of screen height
             true
         )
         popupWindow.setBackgroundDrawable(ColorDrawable(Color.GRAY))
