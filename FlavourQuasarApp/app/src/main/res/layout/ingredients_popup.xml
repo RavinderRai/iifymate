@@ -43,7 +43,7 @@
 
         <Button
             android:id="@+id/buttonAddEditText"
-            android:layout_width="173dp"
+            android:layout_width="170dp"
             android:layout_height="70dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
@@ -53,18 +53,21 @@
             android:layout_marginEnd="00dp"
             android:layout_marginBottom="10dp"
             android:layout_toStartOf="@+id/buttonGetMacros"
+            android:background="@color/button_color_popup"
             android:text="@string/add_ingredient" />
 
         <Button
             android:id="@+id/buttonGetMacros"
-            android:layout_width="160dp"
+            android:layout_width="150dp"
             android:layout_height="70dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
+            android:layout_marginStart="10dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="10dp"
             android:layout_marginBottom="10dp"
+            android:background="@color/button_color_popup"
             android:text="@string/predict_macros_button" />
     </RelativeLayout>
 

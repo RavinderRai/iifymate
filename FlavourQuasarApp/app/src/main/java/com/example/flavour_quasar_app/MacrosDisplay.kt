@@ -9,10 +9,11 @@ import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.animation.Easing
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import com.github.mikephil.charting.formatter.PercentFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.utils.MPPointF
 
 class MacrosDisplay : ComponentActivity() {
@@ -26,6 +27,7 @@ class MacrosDisplay : ComponentActivity() {
         val fat = intent.getIntExtra("fat", 0)
         val protein = intent.getIntExtra("protein", 0)
         val carbs = intent.getIntExtra("carbs", 0)
+
 
         setTextViewText(R.id.calorieCount, "$calories")
         setTextViewText(R.id.fatCount, "$fat")
@@ -73,17 +75,20 @@ class MacrosDisplay : ComponentActivity() {
         // on below line we are setting animation for our pie chart
         pieChart.animateY(1400, Easing.EaseInOutQuad)
 
-        // on below line we are disabling our legend for pie chart
-        pieChart.legend.isEnabled = false
+        // on below line we are setting the legend for pie chart
+        val legend: Legend = pieChart.legend
+        legend.isEnabled = false
+
+        // pieChart.legend.isEnabled = false
         pieChart.setEntryLabelColor(Color.WHITE)
         pieChart.setEntryLabelTextSize(12f)
 
         // on below line we are creating array list and
         // adding data to it to display in pie chart
         val entries: ArrayList<PieEntry> = ArrayList()
-        entries.add(PieEntry(70f)) //carbs
-        entries.add(PieEntry(20f)) // protein
-        entries.add(PieEntry(10f)) // fat
+        entries.add(PieEntry(carbs.toFloat())) //carbs
+        entries.add(PieEntry(protein.toFloat())) // protein
+        entries.add(PieEntry(fat.toFloat())) // fat
 
         // on below line we are setting pie data set
         val dataSet = PieDataSet(entries, "Macros")
@@ -96,26 +101,27 @@ class MacrosDisplay : ComponentActivity() {
         dataSet.iconsOffset = MPPointF(0f, 40f)
         dataSet.selectionShift = 5f
 
+
         // add a lot of colors to list
         val colors: ArrayList<Int> = ArrayList()
         colors.add(ContextCompat.getColor(this, R.color.light_green))
         colors.add(ContextCompat.getColor(this, R.color.light_blue))
         colors.add(ContextCompat.getColor(this, R.color.light_yellow))
 
-
         // on below line we are setting colors.
         dataSet.colors = colors
 
         // on below line we are setting pie data set
         val data = PieData(dataSet)
-        data.setValueFormatter(PercentFormatter())
+        data.setValueFormatter(CustomValueFormatter())
         data.setValueTextSize(15f)
         data.setValueTypeface(Typeface.DEFAULT_BOLD)
-        data.setValueTextColor(Color.WHITE)
+        data.setValueTextColor(Color.BLACK)
         pieChart.setData(data)
 
         // undo all highlights
         pieChart.highlightValues(null)
+
 
         // loading chart
         pieChart.invalidate()
@@ -124,4 +130,10 @@ class MacrosDisplay : ComponentActivity() {
         val textView = findViewById<TextView>(textViewId)
         textView.text = text
     }
+    class CustomValueFormatter : ValueFormatter() {
+        override fun getFormattedValue(value: Float): String {
+            return "${value.toInt()}%" // Append percent symbol to the value
+        }
+    }
+
 }

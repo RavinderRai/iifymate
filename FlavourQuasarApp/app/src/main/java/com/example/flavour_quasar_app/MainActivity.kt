@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
             (resources.displayMetrics.heightPixels * 0.85).toInt(), // Set height to 60% of screen height
             true
         )
-        popupWindow.setBackgroundDrawable(ColorDrawable(Color.GRAY))
+        popupWindow.setBackgroundDrawable(ColorDrawable(Color.argb(255, 215, 250, 214)))
 
         val editTextContainer = popupView.findViewById<LinearLayout>(R.id.editTextContainer)
 
@@ -179,8 +179,8 @@ class MainActivity : ComponentActivity() {
         val buttonGetMacros = popupView.findViewById<Button>(R.id.buttonGetMacros)
         buttonGetMacros.setOnClickListener {
             val placeHolderFat = 30
-            val placeHolderCarbs = 55
-            val placeHolderProtein = 35
+            val placeHolderCarbs = 45
+            val placeHolderProtein = 25
             val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
 
             val intent = Intent(this, MacrosDisplay::class.java)

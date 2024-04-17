@@ -1,142 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/macros_display"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+
+    <!--Ui component for our pie chart-->
+
     <Button
         android:id="@+id/returnActivityMain"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="137dp"
+        android:layout_height="38dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginStart="18dp"
+        android:layout_marginStart="13dp"
         android:layout_marginTop="20dp"
-        android:layout_marginEnd="260dp"
+        android:layout_marginEnd="261dp"
         android:text="@string/macros_display_back_button" />
 
     <TextView
         android:id="@+id/recipeName"
-        android:layout_width="wrap_content"
-        android:layout_height="42dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginStart="143dp"
-        android:layout_marginTop="81dp"
-        android:layout_marginEnd="145dp"
-        android:text="Recipe Name" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="76dp"
+        android:layout_marginEnd="0dp"
+        android:gravity="center"
+        android:text="Recipe Name"
+        android:textColor="@color/black"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/calories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/calorieCount"
+        android:layout_below="@+id/recipeName"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="29dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="3dp"
+        android:gravity="center"
+        android:text="@string/calories"
+        android:textColor="@color/black"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/calorieCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="507dp"
+        android:gravity="center"
+        android:text="@string/placeholdertext"
+        android:textColor="@color/black"
+        android:textSize="25sp" />
+
+    <TextView
+        android:id="@+id/carbsCount"
+        android:layout_width="wrap_content"
+        android:layout_height="41dp"
+        android:layout_above="@+id/proteinCount"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="543dp"
+        android:layout_marginEnd="73dp"
+        android:layout_marginBottom="24dp"
+        android:text="44"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
+
+    <ImageView
+        android:id="@+id/imageView4"
+        android:layout_width="146dp"
+        android:layout_height="28dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="36dp"
+        android:layout_toStartOf="@+id/fat"
+        android:src="@drawable/butter" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="wrap_content"
+        android:layout_height="51dp"
+        android:layout_above="@+id/imageView4"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="31dp"
+        android:layout_marginBottom="15dp"
+        android:layout_toStartOf="@+id/protein"
+        android:src="@drawable/protein_powder" />
+
+    <ImageView
+        android:id="@+id/imageView5"
+        android:layout_width="wrap_content"
+        android:layout_height="62dp"
+        android:layout_above="@+id/imageView2"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="531dp"
+        android:layout_marginEnd="11dp"
+        android:layout_marginBottom="10dp"
+        android:layout_toStartOf="@+id/carbs"
+        android:src="@drawable/bread" />
 
     <TextView
         android:id="@+id/protein"
-        android:layout_width="75dp"
-        android:layout_height="51dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_above="@+id/fat"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="88dp"
-        android:layout_marginEnd="78dp"
-        android:layout_marginBottom="13dp"
+        android:layout_marginEnd="124dp"
+        android:layout_marginBottom="30dp"
         android:layout_toStartOf="@+id/proteinCount"
-        android:text="Protein" />
+        android:text="@string/protein_text_view"
+        android:textColor="@color/light_blue"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/fat"
         android:layout_width="wrap_content"
-        android:layout_height="31dp"
-        android:layout_alignParentStart="true"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="94dp"
-        android:layout_marginEnd="93dp"
-        android:layout_marginBottom="139dp"
+        android:layout_marginEnd="158dp"
+        android:layout_marginBottom="37dp"
         android:layout_toStartOf="@+id/fatCount"
-        android:text="Fat" />
+        android:text="@string/fat_text_view"
+        android:textColor="@color/light_yellow"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/fatCount"
-        android:layout_width="70dp"
-        android:layout_height="35dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="66dp"
-        android:layout_marginBottom="140dp"
-        android:text="TextView" />
+        android:layout_marginEnd="73dp"
+        android:layout_marginBottom="38dp"
+        android:text="44"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
 
     <TextView
         android:id="@+id/proteinCount"
         android:layout_width="wrap_content"
-        android:layout_height="33dp"
+        android:layout_height="wrap_content"
         android:layout_above="@+id/fatCount"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="76dp"
-        android:layout_marginBottom="24dp"
-        android:text="TextView" />
-
-    <TextView
-        android:id="@+id/carbsCount"
-        android:layout_width="79dp"
-        android:layout_height="33dp"
-        android:layout_above="@+id/proteinCount"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="458dp"
-        android:layout_marginEnd="55dp"
-        android:layout_marginBottom="8dp"
-        android:text="TextView" />
+        android:layout_marginEnd="73dp"
+        android:layout_marginBottom="26dp"
+        android:text="44"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
 
     <TextView
         android:id="@+id/carbs"
         android:layout_width="wrap_content"
-        android:layout_height="67dp"
-        android:layout_above="@+id/protein"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="86dp"
-        android:layout_marginTop="444dp"
-        android:layout_marginEnd="100dp"
-        android:layout_marginBottom="6dp"
-        android:layout_toStartOf="@+id/carbsCount"
-        android:text="Carbs" />
-
-    <TextView
-        android:id="@+id/calorieCount"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="150dp"
-        android:layout_marginEnd="139dp"
-        android:layout_marginBottom="497dp"
-        android:text="TextView" />
-
-    <TextView
-        android:id="@+id/calories"
-        android:layout_width="110dp"
         android:layout_height="40dp"
-        android:layout_above="@+id/calorieCount"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="148dp"
-        android:layout_marginEnd="153dp"
-        android:layout_marginBottom="20dp"
-        android:text="Calories" />
+        android:layout_above="@+id/protein"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="541dp"
+        android:layout_marginEnd="137dp"
+        android:layout_marginBottom="27dp"
+        android:layout_toStartOf="@+id/carbsCount"
+        android:text="@string/carbs_text_view"
+        android:textColor="@color/light_green"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
-
-
-    <!--Ui component for our pie chart-->
     <com.github.mikephil.charting.charts.PieChart
         android:id="@+id/pieChart"
-        android:layout_width="wrap_content"
-        android:layout_height="171dp"
+        android:layout_width="match_parent"
+        android:layout_height="240dp"
         android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginStart="91dp"
-        android:layout_marginTop="245dp"
-        android:layout_marginEnd="94dp" />
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="253dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="239dp" />
 
 
 </RelativeLayout>

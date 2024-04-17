@@ -9,13 +9,14 @@
     <color name="white">#FFFFFFFF</color>
     <color name="grey">#aaa</color>
     <color name="button_color">#1E573B</color>
+    <color name="button_color_popup">#AAF3B8</color>
 
     <color name="yellow">#FFEB3B</color>
     <color name="red">#F44336</color>
     <color name="green">#4CAF50</color>
     <color name="blue">#2196F3</color>
 
-    <color name="light_blue">#90E9FF</color>
-    <color name="light_yellow">#FFF178</color>
-    <color name="light_green">#A3EF4A</color>
+    <color name="light_blue">#53DDFF</color>
+    <color name="light_yellow">#FFEA2E</color>
+    <color name="light_green">#8EE824</color>
 </resources>

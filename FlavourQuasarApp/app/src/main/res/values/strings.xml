@@ -8,7 +8,13 @@
     <string name="predict_macros_button">Get Macro\'s</string>
     <string name="ingredients_popup_info">We predict the macros by first predicting the meal\'s ingredients. Here you can edit the ingredients for greater accuracy.</string>
     <string name="add_ingredient">Add Ingredient</string>
-    <string name="macros_display_back_button">Change Recipe</string>
+    <string name="macros_display_back_button">Swap Recipe</string>
+    <string name="calories">Calories</string>
+    <string name="carbs_text_view">Carbs</string>
+    <string name="protein_text_view">Protein</string>
+    <string name="fat_text_view">Fat</string>
+    <string name="placeholdertext">PlaceholderText</string>
+    <string name="pie_chart_title">Macronutrient Ratios</string>
     <string-array name="dropdown_items">
         <item>Balanced</item>
         <item>Vegan</item>
