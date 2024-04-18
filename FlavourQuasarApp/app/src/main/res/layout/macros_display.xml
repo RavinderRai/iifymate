@@ -41,23 +41,6 @@
         android:textSize="30sp" />
 
     <TextView
-        android:id="@+id/calories"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/calorieCount"
-        android:layout_below="@+id/recipeName"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginTop="29dp"
-        android:layout_marginEnd="0dp"
-        android:layout_marginBottom="3dp"
-        android:gravity="center"
-        android:text="@string/calories"
-        android:textColor="@color/black"
-        android:textSize="17sp" />
-
-    <TextView
         android:id="@+id/calorieCount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -66,11 +49,28 @@
         android:layout_alignParentBottom="true"
         android:layout_marginStart="0dp"
         android:layout_marginEnd="0dp"
-        android:layout_marginBottom="507dp"
+        android:layout_marginBottom="513dp"
         android:gravity="center"
         android:text="@string/placeholdertext"
         android:textColor="@color/black"
         android:textSize="25sp" />
+
+    <TextView
+        android:id="@+id/calories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/calorieCount"
+        android:layout_below="@+id/recipeName"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="23dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="3dp"
+        android:gravity="center"
+        android:text="@string/calories"
+        android:textColor="@color/black"
+        android:textSize="17sp" />
 
     <TextView
         android:id="@+id/carbsCount"
@@ -192,15 +192,15 @@
     <com.github.mikephil.charting.charts.PieChart
         android:id="@+id/pieChart"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="0dp"
-        android:layout_marginTop="253dp"
+        android:layout_marginTop="225dp"
         android:layout_marginEnd="0dp"
-        android:layout_marginBottom="239dp" />
+        android:layout_marginBottom="214dp" />
 
 
 </RelativeLayout>

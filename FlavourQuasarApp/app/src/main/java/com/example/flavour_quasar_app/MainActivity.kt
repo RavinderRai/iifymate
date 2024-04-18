@@ -1,14 +1,21 @@
 package com.example.flavour_quasar_app
 
+import android.app.Activity
+import android.app.Fragment
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -31,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.flavour_quasar_app.ui.theme.Flavour_Quasar_AppTheme
 //import com.example.flavour_quasar_app.CosineSimilarity
@@ -48,13 +56,14 @@ import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     private lateinit var buttonOpenPopup: Button
+    private lateinit var buttonPredictMacros: Button
     private lateinit var scrollView: ScrollView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
-        val userInput = editText.text.toString()
+        //val userInput = editText.text.toString()
 
         val spinner: Spinner = findViewById<Spinner>(R.id.spinner)
         val adapter: ArrayAdapter<CharSequence> = ArrayAdapter.createFromResource(
@@ -106,19 +115,52 @@ class MainActivity : ComponentActivity() {
         }
          */
 
+        // grey out - meaning disable - button to make predictions until user enters a recipe
         buttonOpenPopup = findViewById(R.id.enter_button)
-        scrollView = findViewById(R.id.scrollView)
-        //var scrollView = findViewById(R.id.scrollView)
+        buttonPredictMacros = findViewById(R.id.get_macros)
+        buttonOpenPopup.isEnabled = false
+        buttonPredictMacros.isEnabled = false
+
+        // text change listener to enable buttons when recipe is entered
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                // Enable or disable the button based on whether EditText is empty
+                buttonOpenPopup.isEnabled = !s.isNullOrBlank()
+                buttonPredictMacros.isEnabled = !s.isNullOrBlank()
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // No implementation needed
+            }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // No implementation needed
+            }
+        })
         buttonOpenPopup.setOnClickListener() {
-            showPopupWindow()
-            // val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as? LayoutInflater
-            // inflater?.let { layoutInflater ->
-            //    val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
-                //val itemList = mutableListOf("Item 1", "Item 2", "Item 3")
-            //}
+            KeyboardUtils.hideKeyboard(this)
+
+            val userInputRecipe = editText.text.toString()
+            showPopupWindow(userInputRecipe)
+        }
+        buttonPredictMacros.setOnClickListener() {
+            val userInputRecipe = editText.text.toString()
+
+            val placeHolderFat = 30
+            val placeHolderCarbs = 45
+            val placeHolderProtein = 25
+            val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
+
+            val intent = Intent(this, MacrosDisplay::class.java)
+            // Pass data to the new activity if needed
+            intent.putExtra("recipe_name", userInputRecipe)
+            intent.putExtra("calories", calories)
+            intent.putExtra("fat", placeHolderFat)
+            intent.putExtra("carbs", placeHolderCarbs)
+            intent.putExtra("protein", placeHolderProtein)
+            startActivity(intent)
+
         }
     }
-    private fun showPopupWindow() {
+    private fun showPopupWindow(userInput: String) {
         val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
 
         val popupWindow = PopupWindow(
@@ -127,6 +169,11 @@ class MainActivity : ComponentActivity() {
             (resources.displayMetrics.heightPixels * 0.85).toInt(), // Set height to 60% of screen height
             true
         )
+
+        // dismiss keyboard if user clicks outside popup
+        val rootView = findViewById<View>(android.R.id.content)
+        KeyboardUtils.setupKeyboardCloseOnTouch(this, rootView)
+
         popupWindow.setBackgroundDrawable(ColorDrawable(Color.argb(255, 215, 250, 214)))
 
         val editTextContainer = popupView.findViewById<LinearLayout>(R.id.editTextContainer)
@@ -185,6 +232,7 @@ class MainActivity : ComponentActivity() {
 
             val intent = Intent(this, MacrosDisplay::class.java)
             // Pass data to the new activity if needed
+            intent.putExtra("recipe_name", userInput)
             intent.putExtra("calories", calories)
             intent.putExtra("fat", placeHolderFat)
             intent.putExtra("carbs", placeHolderCarbs)
@@ -227,5 +275,77 @@ class MainActivity : ComponentActivity() {
 
         return editText
     }
+    class KeyboardUtils{
 
+        companion object{
+            fun hideKeyboard(activity: Activity) {
+                val imm: InputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+                var view: View? = activity.currentFocus
+                if (view == null) {
+                    view = View(activity)
+                }
+                imm.hideSoftInputFromWindow(view.windowToken, 0)
+            }
+            fun setupKeyboardCloseOnTouch(activity: Activity, rootView: View) {
+
+                rootView.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        hideKeyboardOnTouchOutside(activity, rootView, event)
+                        rootView.performClick()
+                    }
+                    false
+                }
+            }
+            private fun hideKeyboardOnTouchOutside(activity: Activity, rootView: View, event: MotionEvent) {
+                if (rootView.isFocusable && event.y < rootView.top) {
+                    hideKeyboard(activity)
+                }
+            }
+        }
+    }
+    class FlaskPredictor(private val baseUrl: String) {
+
+        private val client = HttpClient()
+
+        suspend fun predictCosineSimilarity(inputRecipeName: String): String? {
+            try {
+                val response: HttpResponse = client.post(url) {
+                    val jsonInput = JSONObject().apply {
+                        put("user_input", inputRecipeName)
+                    }
+                    // Set the JSON object as the body of the request
+                    setBody(jsonInput.toString())
+                }
+                Log.d("Response", response.toString())
+
+                if (response.status == HttpStatusCode.OK) {
+                    // Read the response body as a string
+                    val responseBody = response.bodyAsText()
+                    // Log the response body
+                    Log.d("Response", "Response body: $responseBody")
+                } else {
+                    Log.e("Response", "Error: ${response.status}")
+                }
+            } catch (e: Exception) {
+                Log.e("Response", "Error occurred: ${e.message}")
+            }
+            return sendPredictionRequest("cosine_similarity_predict", inputData)
+        }
+
+        fun predictXGBoost(inputData: String): String? {
+            return sendPredictionRequest("xgboost_predict", inputData)
+        }
+
+        private fun sendPredictionRequest(endpoint: String, inputData: String): String? {
+            val url = "$baseUrl/$endpoint"
+            val request = Request.Builder()
+                .url(url)
+                .post(RequestBody.create(null, inputData))
+                .build()
+
+            val response = client.newCall(request).execute()
+            return response.body()?.string()
+        }
+    }
 }
+

@@ -3,6 +3,7 @@ package com.example.flavour_quasar_app
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -23,11 +24,23 @@ class MacrosDisplay : ComponentActivity() {
         setContentView(R.layout.macros_display)
 
         // Retrieve data passed from previous activity
+        val recipeName = intent.getStringExtra("recipe_name")
         val calories = intent.getIntExtra("calories", 0)
         val fat = intent.getIntExtra("fat", 0)
         val protein = intent.getIntExtra("protein", 0)
         val carbs = intent.getIntExtra("carbs", 0)
 
+        val fatRatio = (fat.toFloat() * 9 / calories.toFloat()) * 100
+        val proteinRatio = (protein.toFloat() * 4 / calories.toFloat()) * 100
+        val carbsRatio = (carbs.toFloat() * 4 / calories.toFloat()) * 100
+
+        Log.d("RecipeName", "Recipe Name: $recipeName")
+        if (recipeName != null) {
+            setTextViewText(R.id.recipeName, recipeName)
+        } else {
+            Log.d("RecipeName", "Recipe Name is null")
+            setTextViewText(R.id.recipeName, "No Recipe Input")
+        }
 
         setTextViewText(R.id.calorieCount, "$calories")
         setTextViewText(R.id.fatCount, "$fat")
@@ -80,15 +93,15 @@ class MacrosDisplay : ComponentActivity() {
         legend.isEnabled = false
 
         // pieChart.legend.isEnabled = false
-        pieChart.setEntryLabelColor(Color.WHITE)
-        pieChart.setEntryLabelTextSize(12f)
+        pieChart.setEntryLabelColor(Color.BLACK)
+        pieChart.setEntryLabelTextSize(14f)
 
         // on below line we are creating array list and
         // adding data to it to display in pie chart
         val entries: ArrayList<PieEntry> = ArrayList()
-        entries.add(PieEntry(carbs.toFloat())) //carbs
-        entries.add(PieEntry(protein.toFloat())) // protein
-        entries.add(PieEntry(fat.toFloat())) // fat
+        entries.add(PieEntry(carbsRatio, "carbs")) //carbs
+        entries.add(PieEntry(proteinRatio, "protein")) // protein
+        entries.add(PieEntry(fatRatio, "fat")) // fat
 
         // on below line we are setting pie data set
         val dataSet = PieDataSet(entries, "Macros")
@@ -114,7 +127,7 @@ class MacrosDisplay : ComponentActivity() {
         // on below line we are setting pie data set
         val data = PieData(dataSet)
         data.setValueFormatter(CustomValueFormatter())
-        data.setValueTextSize(15f)
+        data.setValueTextSize(18f)
         data.setValueTypeface(Typeface.DEFAULT_BOLD)
         data.setValueTextColor(Color.BLACK)
         pieChart.setData(data)
@@ -131,6 +144,7 @@ class MacrosDisplay : ComponentActivity() {
         textView.text = text
     }
     class CustomValueFormatter : ValueFormatter() {
+        //This is to put a percent symbol in the value label in the pie chart
         override fun getFormattedValue(value: Float): String {
             return "${value.toInt()}%" // Append percent symbol to the value
         }
