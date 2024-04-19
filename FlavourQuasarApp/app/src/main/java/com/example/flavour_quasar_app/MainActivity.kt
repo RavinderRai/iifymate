@@ -31,7 +31,12 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -126,13 +131,37 @@ class MainActivity : ComponentActivity() {
 
             val userInputRecipe = editText.text.toString()
 
-
             val predictor = FlaskPredictor()
 
-            val predictedIngredients = runBlocking {
+            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+            coroutineScope.launch {
+                try {
+                    val predictedIngredients = predictor.getIngredientsList(userInputRecipe)
+                    showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+                } catch (e: Exception) {
+                    // Handle exceptions, if any
+                } finally {
+                    loadingDialog.dismiss()
+                }
+            }
+
+            /*
+            val job = GlobalScope.async {
                 predictor.getIngredientsList(userInputRecipe)
             }
-            loadingDialog.dismiss()
+            job.invokeOnCompletion {
+                loadingDialog.dismiss()
+            }
+            GlobalScope.launch(Dispatchers.Main) {
+                val predictedIngredients = job.await()
+                showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+            }
+
+             */
+
+
+
 
             /*
             val ingredients = mutableListOf<String>()
@@ -145,9 +174,11 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
             }
+            */
 
-             */
-            showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+            //showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+
+
         }
 
         buttonPredictMacros.setOnClickListener() {
@@ -156,6 +187,41 @@ class MainActivity : ComponentActivity() {
             val userInputRecipe = editText.text.toString()
 
             val predictor = FlaskPredictor()
+
+            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+            var predictedFat: Int = 0
+            var predictedCarbs: Int = 0
+            var predictedProtein: Int = 0
+            var predictedCalories: Int = 0
+            var macroPredictionInput: String = ""
+
+            coroutineScope.launch {
+                try {
+                    val ingredientsList = predictor.getIngredientsList(userInputRecipe)
+                    val concatenatedIngredients = ingredientsList.joinToString(separator = " ")
+                    macroPredictionInput = "$selectedDietType $userInputRecipe $concatenatedIngredients"
+
+                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
+
+                    val (fat, carbs, protein, calories) = macroPredictions
+                    predictedFat = fat
+                    predictedCarbs = carbs
+                    predictedProtein = protein
+                    predictedCalories = calories
+
+                    // Use the predicted values as needed
+                    // For example, pass them to another function or update UI components
+                } catch (e: Exception) {
+                    // Handle exceptions, if any
+                } finally {
+                    loadingDialog.dismiss()
+                    launchMacrosWindow(userInputRecipe, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
+                }
+            }
+
+
+            /*
 
             val macroPredictions = runBlocking {
                 val ingredientsList = predictor.getIngredientsList(userInputRecipe)
@@ -177,6 +243,7 @@ class MainActivity : ComponentActivity() {
             loadingDialog.dismiss()
 
             startActivity(intent)
+            */
 
         }
     }
@@ -238,6 +305,7 @@ class MainActivity : ComponentActivity() {
 
         val buttonGetMacros = popupView.findViewById<Button>(R.id.buttonGetMacros)
         buttonGetMacros.setOnClickListener {
+            val loadingDialog = showLoadingDialog()
 
             // get all editText items (ingredients) and concatenate them
             val concatenatedIngredients = StringBuilder()
@@ -262,33 +330,37 @@ class MainActivity : ComponentActivity() {
 
             val predictor = FlaskPredictor()
 
+            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+            var predictedFat: Int = 0
+            var predictedCarbs: Int = 0
+            var predictedProtein: Int = 0
+            var predictedCalories: Int = 0
+
+            coroutineScope.launch {
+                try {
+
+                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
+
+                    val (fat, carbs, protein, calories) = macroPredictions
+                    predictedFat = fat
+                    predictedCarbs = carbs
+                    predictedProtein = protein
+                    predictedCalories = calories
+                } catch (e: Exception) {
+                    // Handle exceptions, if any
+                } finally {
+                    loadingDialog.dismiss()
+                    popupWindow.dismiss()
+                    launchMacrosWindow(userInput, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
+                }
+            }
+
+            /*
             val macroPredictions = runBlocking {
                 predictor.getMacroPredictions(macroPredictionInput)
             }
             val (predictedFat, predictedCarbs, predictedProtein, predictedCalories) = macroPredictions
-
-            //runBlocking {
-                /*
-                val macrosPrediction = predictor.predict("predict_macros", macroPredictionInput)
-
-                macrosPrediction?.let { response ->
-                    // Parse JSON response
-                    val jsonResponse = JSONObject(response)
-
-                    // Extract predicted values
-                    predictedFat = jsonResponse.getDouble("predicted_fat")
-                    predictedCarbs = jsonResponse.getDouble("predicted_carbs")
-                    predictedProtein = jsonResponse.getDouble("predicted_protein")
-                    predictedCalories = jsonResponse.getDouble("calories")
-
-
-
-                    // Now you have the predicted values, you can use them as needed
-                    Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
-                }
-
-                 */
-            //}
 
             val intent = Intent(this, MacrosDisplay::class.java)
             // Pass data to the new activity if needed
@@ -300,6 +372,7 @@ class MainActivity : ComponentActivity() {
             startActivity(intent)
 
             popupWindow.dismiss()
+             */
         }
 
         // Show the popup window
@@ -435,7 +508,7 @@ class MainActivity : ComponentActivity() {
             return ingredients
         }
     }
-    fun showLoadingDialog(): Dialog {
+    private fun showLoadingDialog(): Dialog {
         val dialog = Dialog(this)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setContentView(R.layout.loading_layout)
@@ -443,5 +516,14 @@ class MainActivity : ComponentActivity() {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.show()
         return dialog
+    }
+    private fun launchMacrosWindow(userInputRecipe: String, predictedCalories: Int, predictedFat: Int, predictedCarbs: Int, predictedProtein: Int) {
+        val intent = Intent(this, MacrosDisplay::class.java)
+        intent.putExtra("recipe_name", userInputRecipe)
+        intent.putExtra("calories", predictedCalories)
+        intent.putExtra("fat", predictedFat)
+        intent.putExtra("carbs", predictedCarbs)
+        intent.putExtra("protein", predictedProtein)
+        startActivity(intent)
     }
 }
