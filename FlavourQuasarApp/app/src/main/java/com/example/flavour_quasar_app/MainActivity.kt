@@ -1,20 +1,18 @@
 package com.example.flavour_quasar_app
 
 import android.app.Activity
-import android.app.Fragment
-import android.content.Context
+import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -22,36 +20,22 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.ListView
 import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import com.example.flavour_quasar_app.ui.theme.Flavour_Quasar_AppTheme
 //import com.example.flavour_quasar_app.CosineSimilarity
 import io.ktor.client.request.post
-import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.readText
 import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.json.JSONArray
 
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +49,7 @@ class MainActivity : ComponentActivity() {
         val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
         //val userInput = editText.text.toString()
 
+        var selectedDietType: String = ""
         val spinner: Spinner = findViewById<Spinner>(R.id.spinner)
         val adapter: ArrayAdapter<CharSequence> = ArrayAdapter.createFromResource(
             this,
@@ -76,12 +61,11 @@ class MainActivity : ComponentActivity() {
 
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedItem = parent?.getItemAtPosition(position).toString()
+                selectedDietType = parent?.getItemAtPosition(position).toString()
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                val defaultSelectedItem = "Balanced"
+                selectedDietType = "Balanced"
             }
-
         }
 
         /*
@@ -138,29 +122,65 @@ class MainActivity : ComponentActivity() {
         buttonOpenPopup.setOnClickListener() {
             KeyboardUtils.hideKeyboard(this)
 
-            val userInputRecipe = editText.text.toString()
-            showPopupWindow(userInputRecipe)
-        }
-        buttonPredictMacros.setOnClickListener() {
+            val loadingDialog = showLoadingDialog()
+
             val userInputRecipe = editText.text.toString()
 
-            val placeHolderFat = 30
-            val placeHolderCarbs = 45
-            val placeHolderProtein = 25
-            val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
+
+            val predictor = FlaskPredictor()
+
+            val predictedIngredients = runBlocking {
+                predictor.getIngredientsList(userInputRecipe)
+            }
+            loadingDialog.dismiss()
+
+            /*
+            val ingredients = mutableListOf<String>()
+            runBlocking {
+                val ingredientsPrediction = predictor.predict("predict_ingredients", userInputRecipe)
+
+                val jsonArray = JSONArray(ingredientsPrediction)
+                for (i in 0 until jsonArray.length()) {
+                    ingredients.add(jsonArray.getString(i))
+                }
+                Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
+            }
+
+             */
+            showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+        }
+
+        buttonPredictMacros.setOnClickListener() {
+            val loadingDialog = showLoadingDialog()
+
+            val userInputRecipe = editText.text.toString()
+
+            val predictor = FlaskPredictor()
+
+            val macroPredictions = runBlocking {
+                val ingredientsList = predictor.getIngredientsList(userInputRecipe)
+                val concatenatedIngredients = ingredientsList.joinToString(separator = " ")
+                val macroPredictionInput = "$selectedDietType $userInputRecipe $concatenatedIngredients"
+
+                predictor.getMacroPredictions(macroPredictionInput)
+            }
+            val (predictedFat, predictedCarbs, predictedProtein, predictedCalories) = macroPredictions
 
             val intent = Intent(this, MacrosDisplay::class.java)
             // Pass data to the new activity if needed
             intent.putExtra("recipe_name", userInputRecipe)
-            intent.putExtra("calories", calories)
-            intent.putExtra("fat", placeHolderFat)
-            intent.putExtra("carbs", placeHolderCarbs)
-            intent.putExtra("protein", placeHolderProtein)
+            intent.putExtra("calories", predictedCalories)
+            intent.putExtra("fat", predictedFat)
+            intent.putExtra("carbs", predictedCarbs)
+            intent.putExtra("protein", predictedProtein)
+
+            loadingDialog.dismiss()
+
             startActivity(intent)
 
         }
     }
-    private fun showPopupWindow(userInput: String) {
+    private fun showPopupWindow(userInput: String, selectedDietType: String, ingredientsList: List<String>) {
         val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
 
         val popupWindow = PopupWindow(
@@ -178,14 +198,12 @@ class MainActivity : ComponentActivity() {
 
         val editTextContainer = popupView.findViewById<LinearLayout>(R.id.editTextContainer)
 
-        val listOfItems = mutableListOf("Item 1", "Item 2", "Item 3")
-        for (item in listOfItems) {
+        // val ingredientsList = mutableListOf("Item 1", "Item 2", "Item 3")
+        for (item in ingredientsList) {
             val horizontalLayout = LinearLayout(this)
             horizontalLayout.orientation = LinearLayout.HORIZONTAL
 
             val editText = createEditText(item)
-            //val editText = EditText(this)
-            //editText.setText(item)
 
             horizontalLayout.addView(editText)
 
@@ -205,8 +223,6 @@ class MainActivity : ComponentActivity() {
             horizontalLayout.orientation = LinearLayout.HORIZONTAL
 
             // Add EditText
-            //val newEditText = EditText(this)
-            //newEditText.setText("")
             val newEditText = createEditText("")
             horizontalLayout.addView(newEditText)
 
@@ -218,25 +234,69 @@ class MainActivity : ComponentActivity() {
             horizontalLayout.addView(closeButton)
             editTextContainer.addView(horizontalLayout)
 
-            //newEditText.setOnClickListener {
-            //    editTextContainer.removeView(newEditText)
-            //}
         }
 
         val buttonGetMacros = popupView.findViewById<Button>(R.id.buttonGetMacros)
         buttonGetMacros.setOnClickListener {
-            val placeHolderFat = 30
-            val placeHolderCarbs = 45
-            val placeHolderProtein = 25
-            val calories = placeHolderProtein*4 + placeHolderCarbs*4 + placeHolderFat*9
+
+            // get all editText items (ingredients) and concatenate them
+            val concatenatedIngredients = StringBuilder()
+            for (i in 0 until editTextContainer.childCount) {
+                val horizontalLayout = editTextContainer.getChildAt(i) as? LinearLayout
+                // Iterate through each child view (EditText) in horizontalLayout
+                horizontalLayout?.let {
+                    for (j in 0 until it.childCount) {
+                        val view = it.getChildAt(j)
+                        if (view is EditText) {
+                            // Append the text from each EditText to the concatenatedText
+                            concatenatedIngredients.append(view.text.toString())
+                            concatenatedIngredients.append(" ") // Add space separator between EditText values
+                        }
+                    }
+                }
+            }
+            val allEditTextValues = concatenatedIngredients.toString()
+            val macroPredictionInput = "$selectedDietType $userInput $allEditTextValues"
+
+            Log.d("Model Prediction Input", macroPredictionInput)
+
+            val predictor = FlaskPredictor()
+
+            val macroPredictions = runBlocking {
+                predictor.getMacroPredictions(macroPredictionInput)
+            }
+            val (predictedFat, predictedCarbs, predictedProtein, predictedCalories) = macroPredictions
+
+            //runBlocking {
+                /*
+                val macrosPrediction = predictor.predict("predict_macros", macroPredictionInput)
+
+                macrosPrediction?.let { response ->
+                    // Parse JSON response
+                    val jsonResponse = JSONObject(response)
+
+                    // Extract predicted values
+                    predictedFat = jsonResponse.getDouble("predicted_fat")
+                    predictedCarbs = jsonResponse.getDouble("predicted_carbs")
+                    predictedProtein = jsonResponse.getDouble("predicted_protein")
+                    predictedCalories = jsonResponse.getDouble("calories")
+
+
+
+                    // Now you have the predicted values, you can use them as needed
+                    Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
+                }
+
+                 */
+            //}
 
             val intent = Intent(this, MacrosDisplay::class.java)
             // Pass data to the new activity if needed
             intent.putExtra("recipe_name", userInput)
-            intent.putExtra("calories", calories)
-            intent.putExtra("fat", placeHolderFat)
-            intent.putExtra("carbs", placeHolderCarbs)
-            intent.putExtra("protein", placeHolderProtein)
+            intent.putExtra("calories", predictedCalories.toInt())
+            intent.putExtra("fat", predictedFat.toInt())
+            intent.putExtra("carbs", predictedCarbs.toInt())
+            intent.putExtra("protein", predictedProtein.toInt())
             startActivity(intent)
 
             popupWindow.dismiss()
@@ -303,15 +363,17 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    class FlaskPredictor(private val baseUrl: String) {
+    data class PredictedValues(val fat: Int, val carbs: Int, val protein: Int, val calories: Int)
+    class FlaskPredictor(private val baseUrl: String = "http://192.168.0.165:5000") {
 
         private val client = HttpClient()
 
-        suspend fun predictCosineSimilarity(inputRecipeName: String): String? {
-            try {
+        suspend fun predict(endpoint: String, inputData: String): String? {
+            val url = "$baseUrl/$endpoint"
+            return try {
                 val response: HttpResponse = client.post(url) {
                     val jsonInput = JSONObject().apply {
-                        put("user_input", inputRecipeName)
+                        put("user_input", inputData)
                     }
                     // Set the JSON object as the body of the request
                     setBody(jsonInput.toString())
@@ -321,31 +383,65 @@ class MainActivity : ComponentActivity() {
                 if (response.status == HttpStatusCode.OK) {
                     // Read the response body as a string
                     val responseBody = response.bodyAsText()
+
                     // Log the response body
-                    Log.d("Response", "Response body: $responseBody")
+                    Log.d("ResponseBody", "Response body: $responseBody, Type: ${responseBody.javaClass.simpleName}")
+                    responseBody
                 } else {
                     Log.e("Response", "Error: ${response.status}")
+                    null
                 }
             } catch (e: Exception) {
                 Log.e("Response", "Error occurred: ${e.message}")
+                null
             }
-            return sendPredictionRequest("cosine_similarity_predict", inputData)
         }
+        suspend fun getMacroPredictions(macroPredictionInput: String): PredictedValues {
+            var predictedFat: Double = 0.0
+            var predictedCarbs: Double = 0.0
+            var predictedProtein: Double = 0.0
+            var predictedCalories: Double = 0.0
 
-        fun predictXGBoost(inputData: String): String? {
-            return sendPredictionRequest("xgboost_predict", inputData)
+            val macrosPrediction = predict("predict_macros", macroPredictionInput)
+
+            macrosPrediction?.let { response ->
+                // Parse JSON response
+                val jsonResponse = JSONObject(response)
+
+                // Extract predicted values
+                predictedFat = jsonResponse.getDouble("predicted_fat")
+                predictedCarbs = jsonResponse.getDouble("predicted_carbs")
+                predictedProtein = jsonResponse.getDouble("predicted_protein")
+                predictedCalories = jsonResponse.getDouble("calories")
+
+
+                // Now you have the predicted values
+                Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
+            }
+
+            // Return a Quad containing the predicted values and calories
+            return PredictedValues(predictedFat.toInt(), predictedCarbs.toInt(), predictedProtein.toInt(), predictedCalories.toInt())
         }
+        suspend fun getIngredientsList(inputRecipeName: String): List<String> {
+            val ingredientsPrediction = predict("predict_ingredients", inputRecipeName)
 
-        private fun sendPredictionRequest(endpoint: String, inputData: String): String? {
-            val url = "$baseUrl/$endpoint"
-            val request = Request.Builder()
-                .url(url)
-                .post(RequestBody.create(null, inputData))
-                .build()
+            val ingredients = mutableListOf<String>()
 
-            val response = client.newCall(request).execute()
-            return response.body()?.string()
+            val jsonArray = JSONArray(ingredientsPrediction)
+            for (i in 0 until jsonArray.length()) {
+                ingredients.add(jsonArray.getString(i))
+            }
+            Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
+            return ingredients
         }
     }
+    fun showLoadingDialog(): Dialog {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.loading_layout)
+        dialog.setCancelable(false)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.show()
+        return dialog
+    }
 }
-
