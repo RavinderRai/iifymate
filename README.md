@@ -30,5 +30,7 @@ Finally, the original target variable, being a continuous value for the calorie 
 
 Various models were fitted but XGBoost with tf-idf pre-processing seems to be thes best so far. The trained model is evaluated using the cohen kappa score, which is a metric meant for multi-classification problems so works well here. Although it is a harsh metric as well, performance is still low at the moment so will continue to update, and tracking will be done with either mlflow or GCP. Furthermore, grid search is used to get the best model and parameters are tracked as well.
 
+**Update**: Now 3 XGBoost models are fitted to predict each macronutrient individually. The same text pre-processing is used for each, which is tf-idf on the health label, recipe name, and ingredients list. Performance is low at this time but focus is on deployment.
+
 ## Deployment and Future Improvements
 The app is deployed into a streamlit app for now as a test, but as features get added this can become a full micro-SaaS potentially, and would be best suited for mobile. Future improvements include building out models to predict macro nutrients, not just calories. Also, an LLM could be trained to predict ingredients or the full recipe to make the meal, and experimentation has already started so in the future could finish this. Potentially could make the app predict 5 different recipe versions, and the user could pick the most relevant one, and then another model would predict calories/macros from that - increasing accuracy.
