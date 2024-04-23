@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify
 import pickle
-import json
+#import json
 import pandas_gbq
 from sklearn.metrics.pairwise import cosine_similarity
-import os
+#import os
 import ast
 from google.cloud import storage
+#from google.cloud import secretmanager
 import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -125,15 +126,14 @@ def predict_ingredients():
     if user_input_recipe is None:
             # Handle case where 'user_input' is missing
             return jsonify({'error': 'Missing user_input'}), 400
-    
-    #user_input_recipe = user_input_recipe['user_input']
 
-    gcp_config_file = '../flavourquasar-gcp-key.json'
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
+    #gcp_config_file = 'flavourquasar-gcp-key.json'
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
 
-    with open(gcp_config_file, 'r') as file:
-                    gcp_config_data = json.load(file)
-    project_id = gcp_config_data.get('project_id', None)
+    #with open(gcp_config_file, 'r') as file:
+    #                gcp_config_data = json.load(file)
+    #project_id = gcp_config_data.get('project_id', None)
+    project_id = 'flavourquasar'
 
     query = """
         SELECT label, ingredientLines
@@ -156,8 +156,8 @@ def predict_macros():
     user_input = request.get_json(force=True)
     user_input = user_input['user_input']
 
-    gcp_config_file = '../flavourquasar-gcp-key.json'
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
+    #gcp_config_file = 'flavourquasar-gcp-key.json'
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
 
     svd_fitted = load_artifact_from_gcs('macro_data_processing/svd_fitted.pkl')
     tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
@@ -187,4 +187,4 @@ def predict_macros():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8080)

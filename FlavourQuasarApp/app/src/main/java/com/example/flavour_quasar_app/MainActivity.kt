@@ -437,7 +437,8 @@ class MainActivity : ComponentActivity() {
         }
     }
     data class PredictedValues(val fat: Int, val carbs: Int, val protein: Int, val calories: Int)
-    class FlaskPredictor(private val baseUrl: String = "http://192.168.0.165:5000") {
+    // http://192.168.0.165:5000 // local link
+    class FlaskPredictor(private val baseUrl: String = "https://flavourquasar.ue.r.appspot.com") {
 
         private val client = HttpClient()
 

@@ -1,0 +1,3 @@
+runtime: python311
+env_variables:
+  GOOGLE_APPLICATION_CREDENTIALS: flavourquasar-gcp-key.json
