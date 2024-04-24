@@ -1,0 +1,15 @@
+fastapi==0.110.2
+nltk==3.8.1
+numpy==1.24.3
+pandas_gbq==0.21.0
+scikit_learn==1.4.0
+uvicorn==0.29.0
+google-cloud-core==2.4.1
+google-cloud-resource-manager==1.12.2
+google-cloud-storage==2.14.0
+google-api-core==2.17.1
+google-auth==2.27.0
+google-auth-oauthlib==1.0.0
+google-cloud-aiplatform==1.43.0
+xgboost==2.0.3
+protobuf

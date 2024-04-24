@@ -1,21 +1,20 @@
-from flask import Flask, request, jsonify
-import pickle
+from fastapi import FastAPI, HTTPException
 import json
-import pandas_gbq
-from sklearn.metrics.pairwise import cosine_similarity
+import pickle
 import os
 import ast
+import pandas_gbq
+from sklearn.metrics.pairwise import cosine_similarity
 from google.cloud import storage
-#from google.cloud import secretmanager
 import numpy as np
-from nltk.corpus import stopwords
+#from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-app = Flask(__name__)
-
+app = FastAPI()
 
 def remove_stop_words(review):
-    english_stop_words = stopwords.words('english')
+    english_stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', "don't", 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
+    #english_stop_words = stopwords.words('english')
 
     #get the words in the review as a list
     review_words = review.split()
@@ -119,21 +118,18 @@ def comma_to_bracket(ingredient_list):
 
     return recipe
 
-@app.route('/predict_ingredients', methods=['POST'])
-def predict_ingredients():
-    user_input_recipe = request.get_json(force=True)
-    user_input_recipe = user_input_recipe.get('user_input', None)
+@app.post('/predict_ingredients')
+async def predict_ingredients(user_input: dict):
+    user_input_recipe = user_input.get('user_input', None)
     if user_input_recipe is None:
-            # Handle case where 'user_input' is missing
-            return jsonify({'error': 'Missing user_input'}), 400
+        raise HTTPException(status_code=400, detail='Missing user_input')
 
     gcp_config_file = 'flavourquasar-gcp-key.json'
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
 
     with open(gcp_config_file, 'r') as file:
-                    gcp_config_data = json.load(file)
+        gcp_config_data = json.load(file)
     project_id = gcp_config_data.get('project_id', None)
-    #project_id = 'flavourquasar'
 
     query = """
         SELECT label, ingredientLines
@@ -147,14 +143,15 @@ def predict_ingredients():
     cosine_ingred = get_similar_ingredients(user_input_recipe, df, tfidf_fitted)
 
     ingredients_lst = comma_to_bracket(cosine_ingred)
-    ingredients_lst = [item.strip() for item in ingredients_lst.split(',')] # converting ingredients into a list with each ingredient
+    ingredients_lst = [item.strip() for item in ingredients_lst.split(',')]
 
-    return jsonify(ingredients_lst)
+    return ingredients_lst
 
-@app.route('/predict_macros', methods=['POST'])
-def predict_macros():
-    user_input = request.get_json(force=True)
-    user_input = user_input['user_input']
+@app.post('/predict_macros')
+async def predict_macros(user_input: dict):
+    user_input = user_input.get('user_input', None)
+    if user_input is None:
+        raise HTTPException(status_code=400, detail='Missing user_input')
 
     gcp_config_file = 'flavourquasar-gcp-key.json'
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
@@ -176,15 +173,14 @@ def predict_macros():
     predicted_protein = int(np.expm1(XGBoost_protein_model.predict(user_input)[0]))
 
     calories = 9*predicted_fat + 4*(predicted_carbs + predicted_protein)
-    
-    return jsonify({
+
+    return {
         'predicted_fat': predicted_fat,
         'predicted_carbs': predicted_carbs,
         'predicted_protein': predicted_protein,
         'calories': calories
-    })
+    }
 
-
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
