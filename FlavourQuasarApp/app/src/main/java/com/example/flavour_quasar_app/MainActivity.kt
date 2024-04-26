@@ -24,13 +24,18 @@ import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.MutatePriority
 import io.ktor.client.*
 //import com.example.flavour_quasar_app.CosineSimilarity
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.utils.EmptyContent.headers
+import io.ktor.http.HttpHeaders.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
+import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -39,6 +44,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -438,13 +444,14 @@ class MainActivity : ComponentActivity() {
     }
     data class PredictedValues(val fat: Int, val carbs: Int, val protein: Int, val calories: Int)
     // http://192.168.0.165:5000 // local link
-    class FlaskPredictor(private val baseUrl: String = "https://flavourquasar.ue.r.appspot.com") {
+    class FlaskPredictor(private val baseUrl: String = "https://flask-pred-go4e5g7vpq-uc.a.run.app") {
 
         private val client = HttpClient()
 
         suspend fun predict(endpoint: String, inputData: String): String? {
             val url = "$baseUrl/$endpoint"
             return try {
+
                 val response: HttpResponse = client.post(url) {
                     val jsonInput = JSONObject().apply {
                         put("user_input", inputData)
@@ -452,6 +459,8 @@ class MainActivity : ComponentActivity() {
                     // Set the JSON object as the body of the request
                     setBody(jsonInput.toString())
                 }
+
+
                 Log.d("Response", response.toString())
 
                 if (response.status == HttpStatusCode.OK) {
