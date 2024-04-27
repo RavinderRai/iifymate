@@ -15,6 +15,11 @@
     <string name="fat_text_view">Fat</string>
     <string name="placeholdertext">PlaceholderText</string>
     <string name="pie_chart_title">Macronutrient Ratios</string>
+    <string name="fat_graphic_desc">Fat macro graphic image</string>
+    <string name="protein_graphic_desc">Protein macro graphic image</string>
+    <string name="carbs_graphic_desc">Carbs macro graphic image</string>
+    <string name="top_food_graphic_desc">Main View Food Graphic - Top</string>
+    <string name="bottom_food_graphic_desc">Main View Food Graphic - Bottom</string>
     <string-array name="dropdown_items">
         <item>Balanced</item>
         <item>Vegan</item>

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.animation.Easing
@@ -18,7 +19,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.utils.MPPointF
 
 class MacrosDisplay : ComponentActivity() {
-    lateinit var pieChart: PieChart
+    private lateinit var pieChart: PieChart
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.macros_display)
@@ -30,16 +31,32 @@ class MacrosDisplay : ComponentActivity() {
         val protein = intent.getIntExtra("protein", 0)
         val carbs = intent.getIntExtra("carbs", 0)
 
+        //setting up a user alert in case model fails for whatever reason
+        if (calories == 0 && fat == 0 && protein == 0 && carbs == 0) {
+            // Display a Toast message to the user
+            Toast.makeText(
+                this,
+                "Model request failed. Please try again.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            finish()
+        }
+
         val fatRatio = (fat.toFloat() * 9 / calories.toFloat()) * 100
         val proteinRatio = (protein.toFloat() * 4 / calories.toFloat()) * 100
         val carbsRatio = (carbs.toFloat() * 4 / calories.toFloat()) * 100
 
+        val textViewRecipeName = findViewById<TextView>(R.id.recipeName)
+
         Log.d("RecipeName", "Recipe Name: $recipeName")
         if (recipeName != null) {
-            setTextViewText(R.id.recipeName, recipeName)
+            textViewRecipeName.text = recipeName
+            //setTextViewText(R.id.recipeName, recipeName)
         } else {
             Log.d("RecipeName", "Recipe Name is null")
-            setTextViewText(R.id.recipeName, "No Recipe Input")
+            textViewRecipeName.text = "No Recipe Input"
+            //setTextViewText(R.id.recipeName, "No Recipe Input")
         }
 
         setTextViewText(R.id.calorieCount, "$calories")
@@ -55,7 +72,7 @@ class MacrosDisplay : ComponentActivity() {
         pieChart = findViewById(R.id.pieChart)
 
         pieChart.setUsePercentValues(true)
-        pieChart.getDescription().setEnabled(false)
+        pieChart.description.isEnabled = false
         pieChart.setExtraOffsets(5f, 10f, 5f, 5f)
 
         // on below line we are setting drag for our pie chart
@@ -63,7 +80,7 @@ class MacrosDisplay : ComponentActivity() {
 
         // on below line we are setting hole
         // and hole color for pie chart
-        pieChart.setDrawHoleEnabled(true)
+        pieChart.isDrawHoleEnabled = true
         pieChart.setHoleColor(Color.WHITE)
 
         // on below line we are setting circle color and alpha
@@ -71,8 +88,8 @@ class MacrosDisplay : ComponentActivity() {
         pieChart.setTransparentCircleAlpha(110)
 
         // on  below line we are setting hole radius
-        pieChart.setHoleRadius(58f)
-        pieChart.setTransparentCircleRadius(61f)
+        pieChart.holeRadius = 58f
+        pieChart.transparentCircleRadius = 61f
 
         // on below line we are setting center text
         pieChart.setDrawCenterText(true)
@@ -82,8 +99,8 @@ class MacrosDisplay : ComponentActivity() {
         pieChart.setRotationAngle(0f)
 
         // enable rotation of the pieChart by touch
-        pieChart.setRotationEnabled(true)
-        pieChart.setHighlightPerTapEnabled(true)
+        pieChart.isRotationEnabled = true
+        pieChart.isHighlightPerTapEnabled = true
 
         // on below line we are setting animation for our pie chart
         pieChart.animateY(1400, Easing.EaseInOutQuad)

@@ -24,27 +24,17 @@ import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.MutatePriority
 import io.ktor.client.*
 //import com.example.flavour_quasar_app.CosineSimilarity
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.utils.EmptyContent.headers
-import io.ktor.http.HttpHeaders.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.TextContent
-import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -79,39 +69,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        /*
-        //val url = "http://127.0.0.1:5000/predict_ingredients"
-        val url = "http://192.168.0.165:5000/predict_ingredients"
-        val userInputRecipe: String = "Black Bean Tacos"
-
-        runBlocking {
-            try {
-                val client = HttpClient()
-                val response: HttpResponse = client.post(url) {
-                    val jsonInput = JSONObject().apply {
-                        put("user_input", userInputRecipe)
-                    }
-                    // Set the JSON object as the body of the request
-                    setBody(jsonInput.toString())
-                }
-                Log.d("Response", response.toString())
-
-                if (response.status == HttpStatusCode.OK) {
-                    // Read the response body as a string
-                    val responseBody = response.bodyAsText()
-                    // Log the response body
-                    Log.d("Response", "Response body: $responseBody")
-                } else {
-                    Log.e("Response", "Error: ${response.status}")
-                }
-            } catch (e: Exception) {
-                Log.e("Response", "Error occurred: ${e.message}")
-            }
-        }
-         */
-
         // grey out - meaning disable - button to make predictions until user enters a recipe
-        buttonOpenPopup = findViewById(R.id.enter_button)
+        buttonOpenPopup = findViewById(R.id.edit_ingredients)
         buttonPredictMacros = findViewById(R.id.get_macros)
         buttonOpenPopup.isEnabled = false
         buttonPredictMacros.isEnabled = false
@@ -151,40 +110,6 @@ class MainActivity : ComponentActivity() {
                     loadingDialog.dismiss()
                 }
             }
-
-            /*
-            val job = GlobalScope.async {
-                predictor.getIngredientsList(userInputRecipe)
-            }
-            job.invokeOnCompletion {
-                loadingDialog.dismiss()
-            }
-            GlobalScope.launch(Dispatchers.Main) {
-                val predictedIngredients = job.await()
-                showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
-            }
-
-             */
-
-
-
-
-            /*
-            val ingredients = mutableListOf<String>()
-            runBlocking {
-                val ingredientsPrediction = predictor.predict("predict_ingredients", userInputRecipe)
-
-                val jsonArray = JSONArray(ingredientsPrediction)
-                for (i in 0 until jsonArray.length()) {
-                    ingredients.add(jsonArray.getString(i))
-                }
-                Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
-            }
-            */
-
-            //showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
-
-
         }
 
         buttonPredictMacros.setOnClickListener() {
@@ -225,32 +150,6 @@ class MainActivity : ComponentActivity() {
                     launchMacrosWindow(userInputRecipe, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
                 }
             }
-
-
-            /*
-
-            val macroPredictions = runBlocking {
-                val ingredientsList = predictor.getIngredientsList(userInputRecipe)
-                val concatenatedIngredients = ingredientsList.joinToString(separator = " ")
-                val macroPredictionInput = "$selectedDietType $userInputRecipe $concatenatedIngredients"
-
-                predictor.getMacroPredictions(macroPredictionInput)
-            }
-            val (predictedFat, predictedCarbs, predictedProtein, predictedCalories) = macroPredictions
-
-            val intent = Intent(this, MacrosDisplay::class.java)
-            // Pass data to the new activity if needed
-            intent.putExtra("recipe_name", userInputRecipe)
-            intent.putExtra("calories", predictedCalories)
-            intent.putExtra("fat", predictedFat)
-            intent.putExtra("carbs", predictedCarbs)
-            intent.putExtra("protein", predictedProtein)
-
-            loadingDialog.dismiss()
-
-            startActivity(intent)
-            */
-
         }
     }
     private fun showPopupWindow(userInput: String, selectedDietType: String, ingredientsList: List<String>) {
@@ -361,24 +260,6 @@ class MainActivity : ComponentActivity() {
                     launchMacrosWindow(userInput, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
                 }
             }
-
-            /*
-            val macroPredictions = runBlocking {
-                predictor.getMacroPredictions(macroPredictionInput)
-            }
-            val (predictedFat, predictedCarbs, predictedProtein, predictedCalories) = macroPredictions
-
-            val intent = Intent(this, MacrosDisplay::class.java)
-            // Pass data to the new activity if needed
-            intent.putExtra("recipe_name", userInput)
-            intent.putExtra("calories", predictedCalories.toInt())
-            intent.putExtra("fat", predictedFat.toInt())
-            intent.putExtra("carbs", predictedCarbs.toInt())
-            intent.putExtra("protein", predictedProtein.toInt())
-            startActivity(intent)
-
-            popupWindow.dismiss()
-             */
         }
 
         // Show the popup window

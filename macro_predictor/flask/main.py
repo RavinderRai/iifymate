@@ -9,8 +9,11 @@ from google.cloud import storage
 import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from flask_caching import Cache
+from google.cloud import secretmanager
 
 app = Flask(__name__)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 
 def remove_stop_words(review):
@@ -118,6 +121,14 @@ def comma_to_bracket(ingredient_list):
 
     return recipe
 
+def load_model(model_file_name, folder='models/'):
+    file_path = folder + model_file_name
+    with open(file_path, "rb") as f:
+        model = pickle.load(f)
+    return model
+
+
+
 @app.route('/predict_ingredients', methods=['POST'])
 def predict_ingredients():
     user_input_recipe = request.get_json(force=True)
@@ -125,6 +136,8 @@ def predict_ingredients():
     if user_input_recipe is None:
             # Handle case where 'user_input' is missing
             return jsonify({'error': 'Missing user_input'}), 400
+    
+    
 
     gcp_config_file = 'flavourquasar-gcp-key.json'
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
@@ -132,17 +145,28 @@ def predict_ingredients():
     with open(gcp_config_file, 'r') as file:
                     gcp_config_data = json.load(file)
     project_id = gcp_config_data.get('project_id', None)
-    #project_id = 'flavourquasar'
+    project_id = 'flavourquasar'
 
-    query = """
+    df = cache.get('bigquery_data')
+    if df is None:
+        query = """
         SELECT label, ingredientLines
         FROM `flavourquasar.edamam_recipes.edamam_raw_data`
-    """
+        """
+        df = pandas_gbq.read_gbq(query, project_id=project_id)
+        df['ingredientLines'] = df['ingredientLines'].apply(ast.literal_eval)
+        cache.set('bigquery_data', df)
 
-    df = pandas_gbq.read_gbq(query, project_id=project_id)
-    df['ingredientLines'] = df['ingredientLines'].apply(ast.literal_eval)
+    #query = """
+    #    SELECT label, ingredientLines
+    #    FROM `flavourquasar.edamam_recipes.edamam_raw_data`
+    #"""
 
-    tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
+    #df = pandas_gbq.read_gbq(query, project_id=project_id)
+    #df['ingredientLines'] = df['ingredientLines'].apply(ast.literal_eval)
+
+    #tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
+    tfidf_fitted = load_model('tfidf_fitted.pkl')
     cosine_ingred = get_similar_ingredients(user_input_recipe, df, tfidf_fitted)
 
     ingredients_lst = comma_to_bracket(cosine_ingred)
@@ -155,15 +179,25 @@ def predict_macros():
     user_input = request.get_json(force=True)
     user_input = user_input['user_input']
 
-    gcp_config_file = 'flavourquasar-gcp-key.json'
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
+    #gcp_config_file = 'flavourquasar-gcp-key.json'
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_config_file
 
-    svd_fitted = load_artifact_from_gcs('macro_data_processing/svd_fitted.pkl')
-    tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
 
-    XGBoost_fat_model = load_artifact_from_gcs('training/XGBoost_fat_model.pkl')
-    XGBoost_carbs_model = load_artifact_from_gcs('training/XGBoost_carbs_model.pkl')
-    XGBoost_protein_model = load_artifact_from_gcs('training/XGBoost_protein_model.pkl')
+    #svd_fitted = load_artifact_from_gcs('macro_data_processing/svd_fitted.pkl')
+    #tfidf_fitted = load_artifact_from_gcs('macro_data_processing/tfidf_fitted.pkl')
+
+    #XGBoost_fat_model = load_artifact_from_gcs('training/XGBoost_fat_model.pkl')
+    #XGBoost_carbs_model = load_artifact_from_gcs('training/XGBoost_carbs_model.pkl')
+    #XGBoost_protein_model = load_artifact_from_gcs('training/XGBoost_protein_model.pkl')
+    
+
+    svd_fitted = load_model('svd_fitted.pkl')
+    tfidf_fitted = load_model('tfidf_fitted.pkl')
+
+    XGBoost_fat_model = load_model('XGBoost_fat_model.pkl')
+    XGBoost_carbs_model = load_model('XGBoost_carbs_model.pkl')
+    XGBoost_protein_model = load_model('XGBoost_protein_model.pkl')
+    
 
     user_input = remove_stop_words(user_input)
     user_input = lemmatizing_reviews(user_input)

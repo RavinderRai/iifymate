@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/macros_display"
     android:layout_width="match_parent"
@@ -11,17 +9,16 @@
     tools:context=".MainActivity">
 
 
-    <!--Ui component for our pie chart-->
-
     <Button
         android:id="@+id/returnActivityMain"
-        android:layout_width="137dp"
-        android:layout_height="38dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="261dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="11dp"
+        android:layout_marginEnd="259dp"
         android:text="@string/macros_display_back_button" />
 
     <TextView
@@ -36,7 +33,7 @@
         android:layout_marginTop="76dp"
         android:layout_marginEnd="0dp"
         android:gravity="center"
-        android:text="Recipe Name"
+        android:text=""
         android:textColor="@color/black"
         android:textSize="30sp" />
 
@@ -82,12 +79,12 @@
         android:layout_marginTop="543dp"
         android:layout_marginEnd="73dp"
         android:layout_marginBottom="24dp"
-        android:text="44"
+        android:text=""
         android:textColor="@color/black"
         android:textSize="20sp" />
 
     <ImageView
-        android:id="@+id/imageView4"
+        android:id="@+id/fatGraphic"
         android:layout_width="146dp"
         android:layout_height="28dp"
         android:layout_alignParentStart="true"
@@ -96,25 +93,27 @@
         android:layout_marginEnd="10dp"
         android:layout_marginBottom="36dp"
         android:layout_toStartOf="@+id/fat"
-        android:src="@drawable/butter" />
+        android:src="@drawable/butter"
+        android:contentDescription="@string/fat_graphic_desc" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/proteinGraphic"
         android:layout_width="wrap_content"
         android:layout_height="51dp"
-        android:layout_above="@+id/imageView4"
+        android:layout_above="@+id/fatGraphic"
         android:layout_alignParentStart="true"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="31dp"
         android:layout_marginBottom="15dp"
         android:layout_toStartOf="@+id/protein"
-        android:src="@drawable/protein_powder" />
+        android:src="@drawable/protein_powder"
+        android:contentDescription="@string/protein_graphic_desc" />
 
     <ImageView
-        android:id="@+id/imageView5"
+        android:id="@+id/carbsGraphic"
         android:layout_width="wrap_content"
         android:layout_height="62dp"
-        android:layout_above="@+id/imageView2"
+        android:layout_above="@+id/proteinGraphic"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_marginStart="39dp"
@@ -122,7 +121,8 @@
         android:layout_marginEnd="11dp"
         android:layout_marginBottom="10dp"
         android:layout_toStartOf="@+id/carbs"
-        android:src="@drawable/bread" />
+        android:src="@drawable/bread"
+        android:contentDescription="@string/carbs_graphic_desc" />
 
     <TextView
         android:id="@+id/protein"
@@ -158,7 +158,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginEnd="73dp"
         android:layout_marginBottom="38dp"
-        android:text="44"
+        android:text=""
         android:textColor="@color/black"
         android:textSize="20sp" />
 
@@ -170,7 +170,7 @@
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="73dp"
         android:layout_marginBottom="26dp"
-        android:text="44"
+        android:text=""
         android:textColor="@color/black"
         android:textSize="20sp" />
 

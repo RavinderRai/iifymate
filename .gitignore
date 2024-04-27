@@ -181,3 +181,6 @@ calorie_predicter/y_train.csv
 calorie_predicter/y_test.csv
 calorie_predicter/mlruns/
 calorie_predicter/__pycache__/
+
+
+macro_predictor/flask/flavourquasar-gcp-key.json

@@ -4,20 +4,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/macro_predictor_title"
-        android:layout_width="wrap_content"
+
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="360dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="315dp" />
+
+    <Button
+        android:id="@+id/edit_ingredients"
+        android:layout_width="170dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="440dp"
+        android:text="@string/ingredients_button" />
+
+    <EditText
+        android:id="@+id/input_recipe_name"
+        android:layout_width="360dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="170dp"
-        android:text="@string/app_title"
-        android:textSize="40sp"
-        android:textColor="@color/black" />
-
+        android:layout_marginTop="375dp"
+        android:autofillHints=""
+        android:hint="@string/recipe_input"
+        android:inputType="text"
+        android:textSize="25sp" />
 
     <TextView
         android:id="@+id/functionality_description"
-        android:layout_width="360dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="245dp"
@@ -26,64 +42,49 @@
         android:textColor="@color/black"
         android:textSize="19sp" />
 
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="360dp"
-        android:layout_height="46dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="315dp" />
-
-    <EditText
-        android:id="@+id/input_recipe_name"
-        android:layout_width="360dp"
+    <TextView
+        android:id="@+id/macro_predictor_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="360dp"
-        android:autofillHints=""
-        android:hint="@string/recipe_input"
-        android:inputType="text"
-        android:textSize="25sp" />
+        android:layout_marginTop="170dp"
+        android:text="@string/app_title"
+        android:textColor="@color/black"
+        android:textSize="40sp" />
 
     <Button
         android:id="@+id/get_macros"
         android:layout_width="170dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="205dp"
-        android:layout_marginTop="420dp"
+        android:layout_marginTop="440dp"
         android:text="@string/predict_macros_button" />
 
-
-    <Button
-        android:id="@+id/enter_button"
-        android:layout_width="170dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="25dp"
-        android:layout_marginTop="420dp"
-        android:text="@string/ingredients_button" />
 
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/enter_button"/>
+        android:layout_height="wrap_content" />
 
 
     <ImageView
-        android:id="@+id/imageView3"
+        android:id="@+id/topFoodGraphic"
         android:layout_width="489dp"
         android:layout_height="275dp"
         android:layout_marginStart="-40dp"
         android:layout_marginTop="-65dp"
         android:src="@drawable/foods_as_border"
-        android:rotation="0" />
+        android:rotation="0"
+        android:contentDescription="@string/top_food_graphic_desc" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/bottomFoodGraphic"
         android:layout_width="451dp"
         android:layout_height="169dp"
         android:layout_marginStart="-20dp"
         android:layout_marginTop="570dp"
         android:rotation="0"
-        android:src="@drawable/veggies_border" />
+        android:src="@drawable/veggies_border"
+        android:contentDescription="@string/bottom_food_graphic_desc" />
 
 </FrameLayout>
