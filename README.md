@@ -30,4 +30,6 @@ To get the ingredients list, since the user doesn't manually input them, an addi
 
 ## Deployment and Future Improvements
 
+The machine learning models were deployed in a flask app using google cloud run. The models are also currently in Vertex AI but were copied into the docker image for speed and model tracking will likely be moved to an open source tool.
+
 The app is in testing phase to validate it's use case and get user feedback. Latest concerns are the edit ingredients feature, in that allowing the user to customize the ingredients for greater accuracy defeats the purpose of this simplistic nature of the app. Additional functionality would be to reverse the current one, meaning predict a meal given the allowed maconutrient profile and health label. An LLM could be trained to predict ingredients and/or the recipe name for this.
