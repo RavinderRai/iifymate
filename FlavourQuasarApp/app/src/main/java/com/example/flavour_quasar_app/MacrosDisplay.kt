@@ -3,7 +3,7 @@ package com.example.flavour_quasar_app
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.util.Log
+//import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -17,6 +17,7 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.utils.MPPointF
+import java.util.Locale
 
 class MacrosDisplay : ComponentActivity() {
     private lateinit var pieChart: PieChart
@@ -30,6 +31,8 @@ class MacrosDisplay : ComponentActivity() {
         val fat = intent.getIntExtra("fat", 0)
         val protein = intent.getIntExtra("protein", 0)
         val carbs = intent.getIntExtra("carbs", 0)
+
+        val capitalizedRecipeName = recipeName?.capitalizeWords()
 
         //setting up a user alert in case model fails for whatever reason
         if (calories == 0 && fat == 0 && protein == 0 && carbs == 0) {
@@ -49,13 +52,13 @@ class MacrosDisplay : ComponentActivity() {
 
         val textViewRecipeName = findViewById<TextView>(R.id.recipeName)
 
-        Log.d("RecipeName", "Recipe Name: $recipeName")
+        //Log.d("RecipeName", "Recipe Name: $capitalizedRecipeName")
         if (recipeName != null) {
-            textViewRecipeName.text = recipeName
+            textViewRecipeName.text = capitalizedRecipeName
             //setTextViewText(R.id.recipeName, recipeName)
         } else {
-            Log.d("RecipeName", "Recipe Name is null")
-            textViewRecipeName.text = "No Recipe Input"
+            //Log.d("RecipeName", "Recipe Name is null")
+            textViewRecipeName.setText(R.string.no_recipe_name_input)
             //setTextViewText(R.id.recipeName, "No Recipe Input")
         }
 
@@ -116,9 +119,9 @@ class MacrosDisplay : ComponentActivity() {
         // on below line we are creating array list and
         // adding data to it to display in pie chart
         val entries: ArrayList<PieEntry> = ArrayList()
-        entries.add(PieEntry(carbsRatio, "carbs")) //carbs
-        entries.add(PieEntry(proteinRatio, "protein")) // protein
-        entries.add(PieEntry(fatRatio, "fat")) // fat
+        entries.add(PieEntry(carbsRatio, "Carbs")) //carbs
+        entries.add(PieEntry(proteinRatio, "Protein")) // protein
+        entries.add(PieEntry(fatRatio, "Fat")) // fat
 
         // on below line we are setting pie data set
         val dataSet = PieDataSet(entries, "Macros")
@@ -166,5 +169,12 @@ class MacrosDisplay : ComponentActivity() {
             return "${value.toInt()}%" // Append percent symbol to the value
         }
     }
-
+    private fun String.capitalizeWords(): String {
+        return split(" ").joinToString(" ") { it ->
+            it.replaceFirstChar {
+            if (it.isLowerCase()) it.titlecase(
+                Locale.ROOT
+            ) else it.toString()
+        } }
+    }
 }

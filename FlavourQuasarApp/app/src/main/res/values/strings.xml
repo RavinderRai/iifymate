@@ -2,11 +2,11 @@
     <string name="app_name">Flavour_Quasar_App</string>
     <string name="app_title">IIFYMate</string>
     <string name="app_subtitle">Your IIFYM AI Companion</string>
-    <string name="functionality_description">Your IIFYM AI Companion: Get your meal\'s macros with just the diet type and name</string>
+    <string name="functionality_description">Your IIFYM AI Companion: Get your meal\'s macros with just the diet type and name.</string>
     <string name="recipe_input">Enter Recipe Name</string>
     <string name="ingredients_button">Edit Ingredients</string>
     <string name="predict_macros_button">Get Macro\'s</string>
-    <string name="ingredients_popup_info">We predict the macros by first predicting the meal\'s ingredients. Here you can edit the ingredients for greater accuracy.</string>
+    <string name="ingredients_popup_info">We predict the macros by first predicting the meal\'s ingredients, but you can customize them here for greater accuracy.</string>
     <string name="add_ingredient">Add Ingredient</string>
     <string name="macros_display_back_button">Swap Recipe</string>
     <string name="calories">Calories</string>
@@ -20,6 +20,8 @@
     <string name="carbs_graphic_desc">Carbs macro graphic image</string>
     <string name="top_food_graphic_desc">Main View Food Graphic - Top</string>
     <string name="bottom_food_graphic_desc">Main View Food Graphic - Bottom</string>
+    <string name="no_recipe_name_input">No Recipe Input</string>
+    <string name="placeholder_macro_num">50</string>
     <string-array name="dropdown_items">
         <item>Balanced</item>
         <item>Vegan</item>

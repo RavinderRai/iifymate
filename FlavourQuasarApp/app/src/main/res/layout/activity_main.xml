@@ -1,72 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/food_border_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
 
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="360dp"
-        android:layout_height="50dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="315dp" />
+    <RelativeLayout
+        android:layout_gravity="center_vertical|center_horizontal"
+        android:layout_width="350dp"
+        android:layout_height="552dp"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/edit_ingredients"
-        android:layout_width="170dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="25dp"
-        android:layout_marginTop="440dp"
-        android:text="@string/ingredients_button" />
+        <TextView
+            android:id="@+id/macro_predictor_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="50dp"
+            android:text="@string/app_title"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="40sp" />
 
-    <EditText
-        android:id="@+id/input_recipe_name"
-        android:layout_width="360dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="375dp"
-        android:autofillHints=""
-        android:hint="@string/recipe_input"
-        android:inputType="text"
-        android:textSize="25sp" />
+        <TextView
+            android:id="@+id/functionality_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="120dp"
+            android:gravity="center_horizontal"
+            android:text="@string/functionality_description"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
 
-    <TextView
-        android:id="@+id/functionality_description"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="245dp"
-        android:gravity="center_horizontal"
-        android:text="@string/functionality_description"
-        android:textColor="@color/black"
-        android:textSize="19sp" />
+        <Spinner
+            android:id="@+id/spinner"
+            android:layout_width="360dp"
+            android:layout_height="60dp"
+            android:textSize="16sp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="230dp" />
 
-    <TextView
-        android:id="@+id/macro_predictor_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="170dp"
-        android:text="@string/app_title"
-        android:textColor="@color/black"
-        android:textSize="40sp" />
+        <EditText
+            android:id="@+id/input_recipe_name"
+            android:layout_width="360dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="300dp"
+            android:autofillHints=""
+            android:hint="@string/recipe_input"
+            android:inputType="text"
+            android:textSize="25sp" />
 
-    <Button
-        android:id="@+id/get_macros"
-        android:layout_width="170dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="205dp"
-        android:layout_marginTop="440dp"
-        android:text="@string/predict_macros_button" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
+            android:layout_marginTop="370dp"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/edit_ingredients"
+                android:layout_width="170dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="0dp"
+                android:layout_gravity="center"
+                android:text="@string/ingredients_button" />
+
+            <Button
+                android:id="@+id/get_macros"
+                android:layout_width="170dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="0dp"
+                android:layout_gravity="center"
+                android:text="@string/predict_macros_button" />
+        </LinearLayout>
+    </RelativeLayout>
 
 
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-
+    <!--
     <ImageView
         android:id="@+id/topFoodGraphic"
         android:layout_width="489dp"
@@ -79,12 +91,13 @@
 
     <ImageView
         android:id="@+id/bottomFoodGraphic"
-        android:layout_width="451dp"
-        android:layout_height="169dp"
+        android:layout_width="455dp"
+        android:layout_height="210dp"
         android:layout_marginStart="-20dp"
-        android:layout_marginTop="570dp"
+        android:layout_marginTop="600dp"
+        android:contentDescription="@string/bottom_food_graphic_desc"
         android:rotation="0"
-        android:src="@drawable/veggies_border"
-        android:contentDescription="@string/bottom_food_graphic_desc" />
+        android:src="@drawable/veggies_border" />
+     -->
 
 </FrameLayout>

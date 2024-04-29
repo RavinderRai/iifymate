@@ -8,7 +8,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
+//import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -42,15 +42,13 @@ import org.json.JSONArray
 class MainActivity : ComponentActivity() {
     private lateinit var buttonOpenPopup: Button
     private lateinit var buttonPredictMacros: Button
-    private lateinit var scrollView: ScrollView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
-        //val userInput = editText.text.toString()
 
-        var selectedDietType: String = ""
+        var selectedDietType = ""
         val spinner: Spinner = findViewById<Spinner>(R.id.spinner)
         val adapter: ArrayAdapter<CharSequence> = ArrayAdapter.createFromResource(
             this,
@@ -121,11 +119,11 @@ class MainActivity : ComponentActivity() {
 
             val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-            var predictedFat: Int = 0
-            var predictedCarbs: Int = 0
-            var predictedProtein: Int = 0
-            var predictedCalories: Int = 0
-            var macroPredictionInput: String = ""
+            var predictedFat = 0
+            var predictedCarbs = 0
+            var predictedProtein = 0
+            var predictedCalories = 0
+            var macroPredictionInput: String
 
             coroutineScope.launch {
                 try {
@@ -157,8 +155,8 @@ class MainActivity : ComponentActivity() {
 
         val popupWindow = PopupWindow(
             popupView,
-            (resources.displayMetrics.widthPixels * 0.9).toInt(), // Set width to 80% of screen width
-            (resources.displayMetrics.heightPixels * 0.85).toInt(), // Set height to 60% of screen height
+            (resources.displayMetrics.widthPixels * 0.9).toInt(), // Set width to 90% of screen width
+            (resources.displayMetrics.heightPixels * 0.85).toInt(), // Set height to 85% of screen height
             true
         )
 
@@ -182,7 +180,6 @@ class MainActivity : ComponentActivity() {
             val closeButton = createCloseButton()
             closeButton.setOnClickListener {
                 editTextContainer.removeView(horizontalLayout)
-                //editTextContainer.removeView(closeButton)
             }
             horizontalLayout.addView(closeButton)
             editTextContainer.addView(horizontalLayout)
@@ -206,6 +203,10 @@ class MainActivity : ComponentActivity() {
             horizontalLayout.addView(closeButton)
             editTextContainer.addView(horizontalLayout)
 
+            val scrollView: ScrollView = popupView.findViewById(R.id.ingredients_popup)
+            scrollView.post {
+                scrollView.fullScroll(ScrollView.FOCUS_DOWN)
+            }
         }
 
         val buttonGetMacros = popupView.findViewById<Button>(R.id.buttonGetMacros)
@@ -231,16 +232,16 @@ class MainActivity : ComponentActivity() {
             val allEditTextValues = concatenatedIngredients.toString()
             val macroPredictionInput = "$selectedDietType $userInput $allEditTextValues"
 
-            Log.d("Model Prediction Input", macroPredictionInput)
+            //Log.d("Model Prediction Input", macroPredictionInput)
 
             val predictor = FlaskPredictor()
 
             val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-            var predictedFat: Int = 0
-            var predictedCarbs: Int = 0
-            var predictedProtein: Int = 0
-            var predictedCalories: Int = 0
+            var predictedFat = 0
+            var predictedCarbs = 0
+            var predictedProtein = 0
+            var predictedCalories = 0
 
             coroutineScope.launch {
                 try {
@@ -329,7 +330,7 @@ class MainActivity : ComponentActivity() {
 
         private val client = HttpClient()
 
-        suspend fun predict(endpoint: String, inputData: String): String? {
+        private suspend fun predict(endpoint: String, inputData: String): String? {
             val url = "$baseUrl/$endpoint"
             return try {
 
@@ -342,29 +343,29 @@ class MainActivity : ComponentActivity() {
                 }
 
 
-                Log.d("Response", response.toString())
+                //Log.d("Response", response.toString())
 
                 if (response.status == HttpStatusCode.OK) {
                     // Read the response body as a string
                     val responseBody = response.bodyAsText()
 
                     // Log the response body
-                    Log.d("ResponseBody", "Response body: $responseBody, Type: ${responseBody.javaClass.simpleName}")
+                    //Log.d("ResponseBody", "Response body: $responseBody, Type: ${responseBody.javaClass.simpleName}")
                     responseBody
                 } else {
-                    Log.e("Response", "Error: ${response.status}")
+                    //Log.e("Response", "Error: ${response.status}")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("Response", "Error occurred: ${e.message}")
+                //.e("Response", "Error occurred: ${e.message}")
                 null
             }
         }
         suspend fun getMacroPredictions(macroPredictionInput: String): PredictedValues {
-            var predictedFat: Double = 0.0
-            var predictedCarbs: Double = 0.0
-            var predictedProtein: Double = 0.0
-            var predictedCalories: Double = 0.0
+            var predictedFat = 0.0
+            var predictedCarbs = 0.0
+            var predictedProtein = 0.0
+            var predictedCalories = 0.0
 
             val macrosPrediction = predict("predict_macros", macroPredictionInput)
 
@@ -380,7 +381,7 @@ class MainActivity : ComponentActivity() {
 
 
                 // Now you have the predicted values
-                Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
+                //Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
             }
 
             // Return a Quad containing the predicted values and calories
@@ -395,7 +396,7 @@ class MainActivity : ComponentActivity() {
             for (i in 0 until jsonArray.length()) {
                 ingredients.add(jsonArray.getString(i))
             }
-            Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
+            //Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
             return ingredients
         }
     }
