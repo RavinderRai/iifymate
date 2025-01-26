@@ -6,7 +6,7 @@
 
 The IIFYMate app is a machine learning app that calcualtes a meals' macronutrients using just its name and dietary type. The aim is to simplify flexible dieting approaches by removing the need to measure every food the user might consume with a food scale, ultimately saving time. Under the hood, 3 machine learning models have been trained on a dataset of recipes with their respective macros, when 1 model is dedicated for 1 macronutrient (protein, carbs, fats). Furthermore, the user can increase accuracy by customizing the ingredients with a simple estimation of their quantity - but still no need to get the exact food/brand of food. 
 
-<img src="images/IIFYMate_Feature_Graphic.png" alt="FlavourQuasar Feature Graphic" width="1024" height="450">
+<img src="media/IIFYMate_Feature_Graphic.png" alt="FlavourQuasar Feature Graphic" width="1024" height="450">
 
 ## Data Collection
 
