@@ -20,7 +20,7 @@ The final input variables in the end are of course the recipe name and health la
 ### Target Variables
 Initially, the original target variable was just the calories. The distribution of it is below, and you can see a large range of values that may not be intuitive. This is because recipes being more than 2000 calories for 1 person is unusual, so the natural assumption is that they must have been large meals for multiple people. Since this is a regression problem, they were kept, but further exploration should be done to consider removing them depending on the apps use case. 
 
-<img src="flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
+<img src="media/flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
 
 The actual target variables were all three macronutrients. For some reason there was a discrepency in the calories of a recipe and the macronutrients, since a meals total number of calories should be $`9*fat + 4*protein + 4*carbs`$, but it seemed to be lower than the calorie column that already existed. To address this, calories were calculated seperately using the macros, since ultimately the macros are the targets anyway. 
 

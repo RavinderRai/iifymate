@@ -25,7 +25,7 @@ class RecipeETL:
         run_etl(self, ingredient): Performs ETL process (not implemented yet).
     """
 
-    def __init__(self, config_file='config.json', gcp_config_file='flavourquasar-gcp-key.json'):
+    def __init__(self, config_file_path='config.json', gcp_config_file='flavourquasar-gcp-key.json'):
         """Initializes a RecipeETL object."""
         self.config_data = self.load_config(config_file_path)
         api_keys = self.config_data.get('api_keys', {})
@@ -36,17 +36,17 @@ class RecipeETL:
         self.gcp_config_data = self.load_config(self.gcp_config_file)
         self.project_id = self.gcp_config_data.get('project_id', None)
 
-"""
-old function - can delete if newer one is working fine
-    def load_config(self):
-        #Loads configuration data and extracts API keys.
-        with open(self.config_file, 'r') as f:
-            self.config_data = json.load(f)
-        
-        api_keys = self.config_data.get('api_keys', {})
-        self.APP_ID = api_keys.get('edamam_app_id', None)
-        self.APP_KEY = api_keys.get('edamam_app_key', None)
-"""
+    """
+    old function - can delete if newer one is working fine
+        def load_config(self):
+            #Loads configuration data and extracts API keys.
+            with open(self.config_file, 'r') as f:
+                self.config_data = json.load(f)
+            
+            api_keys = self.config_data.get('api_keys', {})
+            self.APP_ID = api_keys.get('edamam_app_id', None)
+            self.APP_KEY = api_keys.get('edamam_app_key', None)
+    """
 
     def load_config(self, config_file_path):
         """
