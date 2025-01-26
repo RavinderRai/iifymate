@@ -1,6 +1,46 @@
-# IIFYMate App - AI Macro Calculator Companion
+# IFFYMate v2: AI-Powered Macro Tracking
 
 [Google Play Link](https://play.google.com/store/apps/details?id=com.qml_studios.flavour_quasar_app)
+
+Mobile app that analyzes food images and provides personalized macro/calorie tracking through AI, combining LLMs and traditional ML.
+
+## Core Features
+1. **Vision-LLM Analysis**
+  - Upload meal photos
+  - GPT-4 Vision analyzes ingredients
+  - RAG system with food database
+  
+2. **Calorie Verification**
+  - ML model validates LLM calorie estimates
+  - Cross-reference for accuracy
+  - Automated threshold checking
+
+3. **Diet Translation**
+  - Fine-tuned LLM for meal modifications
+  - Convert meals between diet types
+  - Personalized recommendations
+
+## Technical Architecture
+- Android native frontend
+- FastAPI microservices
+- MLflow for experiment tracking
+- Vector database for ingredients
+- AWS infrastructure
+- Kubernetes orchestration
+
+## Development Phases
+1. ML Models & APIs
+2. Android App Integration
+3. Cloud Infrastructure
+4. MLOps Implementation
+5. Production Optimization
+
+## Goals
+- Production-grade MLOps practices
+- Scalable cloud architecture
+- Enterprise-level code quality
+- Performance monitoring
+- Automated deployment
 
 ## Introduction
 
