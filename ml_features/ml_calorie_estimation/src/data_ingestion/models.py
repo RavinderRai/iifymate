@@ -45,7 +45,7 @@ class APIConfig(BaseModel):
     
 class CollectorConfig(BaseModel):
     """Recipe collection configuration"""
-    target_recipes: int = 1000
+    target_recipes: int = 100
     min_recipes_per_category: int = 100
     rate_limit: float = 10
     max_retries: int = 3

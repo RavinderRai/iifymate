@@ -5,7 +5,7 @@ class DatabaseConfig(BaseModel):
     username: str
     password: str
     host: str = "localhost"
-    database: str = "raw_recipes"
+    database: str = "recipe_data"
     
     @property
     def connection_string(self) -> str:
