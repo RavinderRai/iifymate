@@ -3,9 +3,9 @@ from pydantic import BaseModel
 class DatabaseConfig(BaseModel):
     """Database configuration settings"""
     username: str
-    password: str
-    host: str = "localhost"
-    database: str = "recipe_data"
+    password: str # will be set with environment variable
+    host: str
+    database: str
     
     @property
     def connection_string(self) -> str:

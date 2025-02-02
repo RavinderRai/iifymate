@@ -1,12 +1,12 @@
 collection:
-  target_recipes: 500
-  min_recipes_per_category: 50
+  target_recipes: 10000
+  min_recipes_per_category: 200
+  max_retries: 5
   requests_per_minute: 10
-  max_retries: 3
 
 database:
   username: "iifymate"
-  host: "localhost"
+  host: "production_host"
   database: "recipe_data"
 
 api:

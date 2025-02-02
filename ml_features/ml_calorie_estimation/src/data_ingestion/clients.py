@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import aiohttp
-from ml_features.ml_calorie_estimation.src.data_ingestion.models import APIConfig
+from ml_features.ml_calorie_estimation.src.data_ingestion.config import APIConfig
 
 class RecipeClient(ABC):
     """Abstract base class for recipe API clients"""

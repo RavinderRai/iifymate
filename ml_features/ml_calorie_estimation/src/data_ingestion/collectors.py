@@ -1,7 +1,7 @@
 import time
 import asyncio
 import random
-from ml_features.ml_calorie_estimation.src.data_ingestion.models import RecipeParameters, ParameterStats
+from ml_features.ml_calorie_estimation.src.data_ingestion.config import RecipeParameters, ParameterStats
 from ml_features.ml_calorie_estimation.src.data_ingestion.clients import RecipeClient
 
 

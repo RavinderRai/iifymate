@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
 
 class RecipeParameters(BaseModel):
     """Stores all valid parameter values for recipe searches"""
@@ -36,16 +36,19 @@ class ParameterStats(BaseModel):
     total: int = Field(default=0, description="Total number of queries")
     
 class APIConfig(BaseModel):
-    """API Configuration"""
-    app_id: str
-    app_key: str
-    base_url: str = "https://api.edamam.com/api/recipes/v2"
-    timeout: int = 30
-    max_retries: int = 3
+    base_url: str
+    timeout: int
+    app_id: str    # Will be set from environment variable
+    app_key: str   # Will be set from environment variable
     
 class CollectorConfig(BaseModel):
     """Recipe collection configuration"""
-    target_recipes: int = 100
-    min_recipes_per_category: int = 100
-    rate_limit: float = 10
-    max_retries: int = 3
+    target_recipes: int
+    min_recipes_per_category: int
+    requests_per_minute: int
+    max_retries: int
+    
+class Config(BaseModel):
+    collection: CollectorConfig
+    database: DatabaseConfig
+    api: APIConfig
