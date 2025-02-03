@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, JSON, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from ..base import BaseTable
+from .raw_data import RawRecipe # Note: You need this import for the relationship to work
     
 class CleanRecipe(BaseTable):
     __tablename__ = 'clean_recipes'
@@ -21,6 +22,7 @@ class CleanRecipe(BaseTable):
     dishType = Column(JSON)
     totalNutrients = Column(JSON)
     tags = Column(JSON)
+    
     raw_recipe = relationship("RawRecipe")
     
     @classmethod
