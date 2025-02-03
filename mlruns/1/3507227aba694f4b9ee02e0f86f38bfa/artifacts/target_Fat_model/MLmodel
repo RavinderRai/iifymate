@@ -1,0 +1,20 @@
+artifact_path: target_Fat_model
+flavors:
+  python_function:
+    data: model.xgb
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.12.4
+  xgboost:
+    code: null
+    data: model.xgb
+    model_class: xgboost.sklearn.XGBRegressor
+    model_format: xgb
+    xgb_version: 2.1.3
+mlflow_version: 2.20.0
+model_size_bytes: 129581
+model_uuid: 11a48a59b260458bb62e39ab91453eff
+run_id: 3507227aba694f4b9ee02e0f86f38bfa
+utc_time_created: '2025-02-03 21:57:35.229519'
