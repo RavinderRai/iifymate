@@ -1,9 +1,11 @@
-from typing import List, Type
+from typing import List, Type, TypeVar
 import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from ml_features.ml_calorie_estimation.src.databases.models.raw_data import Base
 from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
+from ml_features.ml_calorie_estimation.src.databases.base import BaseTable
+
+T = TypeVar('T', bound= BaseTable)
 
 logger = logging.getLogger(__name__)
 
@@ -14,25 +16,42 @@ class DatabaseManager:
         
     def init_db(self):
         """Initialize database tables"""
-        Base.metadata.create_all(self.engine)
+        BaseTable.metadata.create_all(self.engine)
         
-    def store_records(self, records: List[dict], model_class: Type):
+    def create_table(self, model_class: Type[T]) -> None:
+        """Create table if it doesn't exist
+        
+        Args:
+            model_class: SQLAlchemy model class extending BaseTable
+        """
+        inspector = inspect(self.engine)
+        if not inspector.has_table(model_class.__tablename__):
+            model_class.__table__.create(self.engine)
+            logger.info(f"Created table {model_class.__tablename__}")
+        
+    def store_records(self, records: List[dict], model_class: Type[T]) -> int:
         """Store multiple records in the database
         
         Args:
             records: List of dictionaries containing record data
             model_class: SQLAlchemy model class to use for storing records
+            
+        Returns:
+            int: Number of records successfully stored
         """
         session = self.Session()
+        successful_records = 0
         try:
             for i, record in enumerate(records):
                 try:
                     db_record = model_class.from_dict(record)
                     session.add(db_record)
+                    successful_records += 1
                 except Exception as e:
                     logger.error(f"Failed to store record at index {i}: {e}")
                     continue
             session.commit()
+            return successful_records
         except Exception as e:
             logger.error(f"Database transaction failed: {e}")
             session.rollback()
@@ -40,7 +59,7 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def delete_all_records(self, model_class: Type):
+    def delete_all_records(self, model_class: Type[T]) -> None:
         """Delete all records from specified table
         
         Args:

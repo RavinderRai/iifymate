@@ -40,6 +40,8 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
     
     db_manager = DatabaseManager(db_config)
     db_manager.init_db()
+    # Check if table already exists and create if not
+    db_manager.create_table(RawRecipe)
 
     # Collect recipes
     recipes = await collector.collect_recipes(
@@ -52,9 +54,9 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
         logger.info("Successfully deleted all recipes from database")
     
     logger.info("Storing recipes in database...")
-    db_manager.store_records(recipes, RawRecipe)
+    num_stored = db_manager.store_records(recipes, RawRecipe)
     
-    logger.info(f"Successfully stored {len(recipes)} recipes in database")
+    logger.info(f"Successfully stored {num_stored} recipes in database")
 
     return recipes, collector.parameter_stats
 

@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, JSON, Float
-from sqlalchemy.orm import declarative_base
+from ml_features.ml_calorie_estimation.src.databases.base import BaseTable
 
-Base = declarative_base()
-
-class RawRecipe(Base):  # Changed to PascalCase for class naming convention
+class RawRecipe(BaseTable):  # Changed to PascalCase for class naming convention
     __tablename__ = 'raw_recipes'
     
     id = Column(Integer, primary_key=True)
