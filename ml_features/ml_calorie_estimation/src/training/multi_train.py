@@ -22,13 +22,16 @@ def train_all_macro_models(
     Returns:
         Tuple[Dict, Dict]: (models, metrics) dictionaries
     """
-    mlflow.set_experiment("macro_nutrient_prediction")
+    experiment_name = "macro_nutrient_prediction_dev" if is_dev else "macro_nutrient_prediction_prod"
+    mlflow.set_experiment(experiment_name)
     
     models = {}
     metrics = {}
     
-    for macro in ['target_Fat', 'target_Carbohydrates (net)', 'target_Protein']:
-        logger.info(f"Training model for {macro}")
+    for macro in ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']:
+        # mlflow won't allow spaces in run names, and let's also remove the brackets
+        model_name = macro.replace(" ", "_").replace("(", "").replace(")", "")
+        logger.info(f"Training model for {model_name}")
         
         # Define parameter grid
         param_grid = {
@@ -38,15 +41,19 @@ def train_all_macro_models(
         }
         
         with mlflow.start_run(run_name=f"{macro}_full_pipeline") as parent_run:
+            mlflow.set_tag("macro_type", macro)
+            mlflow.set_tag("model_name", model_name)
+            mlflow.set_tag("environment", "development" if is_dev else "production")
+            
             # Grid search
-            logger.info(f"Starting grid search for {macro}")
+            logger.info(f"Starting grid search for {model_name}")
             best_params = grid_search_macro_model(
                 X_train, y_train, macro, param_grid, is_dev=is_dev
             )
             
             # Train model with best parameters
-            logger.info(f"Training final model for {macro} with best parameters")
-            model = train_macro_model(X_train, y_train, macro, best_params)
+            logger.info(f"Training final model for {model_name} with best parameters")
+            model = train_macro_model(X_train, y_train, macro, model_name, best_params)
             
             # Evaluate model
             logger.info(f"Evaluating {macro} model")
@@ -59,7 +66,7 @@ def train_all_macro_models(
             }
             
             # Log artifacts
-            mlflow.log_params(best_params)
-            mlflow.log_metrics(model_metrics)
+            mlflow.log_params({f"{model_name}_{k}": v for k, v in best_params.items()})
+            mlflow.log_metrics({f"{model_name}_{k}": v for k, v in model_metrics.items()})
     
     return models, metrics

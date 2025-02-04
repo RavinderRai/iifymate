@@ -50,6 +50,7 @@ def run_feature_transformations(env: str = "local"):
     
     logger.info("Extracting target variables.")
     y = pd.DataFrame(list(nutrients.apply(lambda row: get_macros(row))))
+    y.rename(columns={'Carbohydrates (net)': 'Carbohydrates_net'},inplace=True)
     
     # Split data into training and testing sets and perform TF-IDF vectorization
     logger.info("Performing train-test split and TF-IDF vectorization.")

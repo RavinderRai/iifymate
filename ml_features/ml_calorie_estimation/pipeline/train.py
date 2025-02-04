@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from feast import FeatureStore
 import pandas as pd
 import mlflow
@@ -8,6 +10,10 @@ from ml_features.ml_calorie_estimation.src.training.data_validation import clean
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+ML_PROJECT_ROOT = Path(__file__).parent.parent.absolute()
+MLFLOW_TRACKING_URI = os.path.join(ML_PROJECT_ROOT, "mlruns")
+
 
 def load_training_data():
     # Initialize feature store
@@ -52,7 +58,7 @@ def run_training(env:str = "local"):
     """
     X_train, X_test, y_train, y_test = load_training_data()
     
-    macros = ['target_Fat', 'target_Carbohydrates (net)', 'target_Protein']
+    macros = ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']
     
     # Clean both train and test data
     logger.info("Cleaning training data...")
@@ -62,11 +68,11 @@ def run_training(env:str = "local"):
     X_test, y_test = clean_training_testing_data(X_test, y_test, macros)
     
     
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    mlflow.set_tracking_uri(f"file://{MLFLOW_TRACKING_URI}")
     
     _, metrics = train_all_macro_models(X_train, X_test, y_train, y_test, env)
     
-    for macro in ['target_Fat', 'target_Carbohydrates (net)', 'target_Protein']:
+    for macro in ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']:
         logging.info(f"\n{macro.upper()} Results:")
         logging.info(f"R2 Score: {metrics[macro]['r2']:.4f}")
         logging.info(f"MSE: {metrics[macro]['mse']:.4f}")
