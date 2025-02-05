@@ -189,5 +189,5 @@ macro_predictor/flask/flavourquasar-gcp-key.json
 
 ml_features/ml_calorie_estimation/feature_store/
 ml_features/ml_calorie_estimation/mlruns/
-mlruns/
-ml_features/ml_calorie_estimation/feature_store/feature_repo/data/recipe_features.parquet
+
+
