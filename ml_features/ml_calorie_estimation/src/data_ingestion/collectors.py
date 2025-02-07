@@ -4,6 +4,8 @@ import random
 from ml_features.ml_calorie_estimation.src.data_ingestion.config import RecipeParameters, ParameterStats
 from ml_features.ml_calorie_estimation.src.data_ingestion.clients import RecipeClient
 
+import logging
+logger = logging.getLogger(__name__)
 
 class RecipeDataCollector:
     def __init__(self,
@@ -13,6 +15,18 @@ class RecipeDataCollector:
                  max_retries: int = 3,
                  rate_limit: float = 1.0,
                  semaphore: asyncio.Semaphore = None):
+        """
+        Initialize the RecipeDataCollector.
+
+        Args:
+            params (RecipeParameters): Contains all valid parameter values for recipe searches.
+            client (RecipeClient): The API client to use for requesting recipes.
+            min_recipes_per_category (int): Minimum number of recipes to collect per category.
+            max_retries (int): Maximum number of retries for failed recipe collection attempts.
+            rate_limit (float): Time in seconds to wait between API requests to avoid rate limiting.
+            semaphore (asyncio.Semaphore, optional): Semaphore to limit concurrent API requests. Defaults to a semaphore with 10 permits.
+        """
+
         self.params = params
         self.client = client
         self.min_recipes = min_recipes_per_category
@@ -96,10 +110,10 @@ class RecipeDataCollector:
                 async with self.semaphore:
                     # Generate parameter combination
                     params = self._generate_parameter_combination()
-                    print(f"Trying parameters: {params}")
+                    logger.info(f"Trying parameters: {params}")
                     
                     # Rate limiting
-                    time.sleep(self.rate_limit)
+                    await asyncio.sleep(self.rate_limit)
                     
                     # Get recipes
                     recipes = await self.client.get_recipes(**params)
@@ -118,10 +132,10 @@ class RecipeDataCollector:
                         # Update stats for unsuccessful combination
                         self._update_stats(params, success=False)
                         
-                    print(f"Collected {len(unique_recipes)} unique recipes")
+                    logger.info(f"Collected {len(unique_recipes)} unique recipes")
                 
             except Exception as e:
-                print(f"Error collecting recipes: {str(e)}")
+                logger.info(f"Error collecting recipes: {str(e)}")
                 retries += 1
                 
         return list(self.collected_recipes.values())
