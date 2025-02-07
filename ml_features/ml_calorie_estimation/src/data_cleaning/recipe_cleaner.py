@@ -1,4 +1,5 @@
 import ast
+import json
 import pandas as pd
 
 def drop_unused_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -14,7 +15,9 @@ def clean_ingredients(df: pd.DataFrame) -> pd.DataFrame:
     """Clean the ingredients column."""
     def parse_ingredients(ingredients):
         if isinstance(ingredients, str):
-            ingredients = ast.literal_eval(ingredients)
+            ingredients = json.loads(ingredients)
+            # old method
+            # ingredients = ast.literal_eval(ingredients)
         return [{'text': ing['text'], 
                 'quantity': float(ing['quantity']) if 'quantity' in ing else 0.0,
                 'measure': ing['measure'] if 'measure' in ing else 'unit'} 

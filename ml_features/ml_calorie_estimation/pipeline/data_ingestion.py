@@ -11,6 +11,7 @@ from ml_features.ml_calorie_estimation.src.data_ingestion.clients import EdamamC
 from ml_features.ml_calorie_estimation.src.data_ingestion.collectors import RecipeDataCollector
 from ml_features.ml_calorie_estimation.src.databases.manager import DatabaseManager
 from ml_features.ml_calorie_estimation.src.databases.models.raw_data import RawRecipe
+from ml_features.ml_calorie_estimation.src.databases.models.clean_data import CleanRecipe
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -50,6 +51,12 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
     
     if delete_all_recipes:
         logger.info("Deleting all recipes from database...")
+        try:
+            # try to delete all clean recipes, just in case this table hasn't been created yet
+            db_manager.delete_all_records(CleanRecipe) # Note: you must delete this first to prevent IntegrityError error due to relationship
+        except Exception as e:
+            logger.error(f"Failed to delete clean recipes from database: {e}")
+        
         db_manager.delete_all_records(RawRecipe)
         logger.info("Successfully deleted all recipes from database")
     
@@ -61,6 +68,8 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
     return recipes, collector.parameter_stats
 
 if __name__ == "__main__":
+    # Run this command in WSL in root directory to test:
+    # python -m ml_features.ml_calorie_estimation.pipeline.data_ingestion
     recipes, stats = asyncio.run(collect_and_store_recipes(env="local", delete_all_recipes=True))
     
     # Display statistics only when run as main script
