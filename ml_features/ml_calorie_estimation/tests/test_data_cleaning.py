@@ -89,5 +89,7 @@ def test_full_pipeline_with_real_data(sample_recipes):
     assert isinstance(df['totalNutrients'].iloc[0], dict)
     
 if __name__ == '__main__':
+    # Run with pytest with this command:
+    # pytest ml_features/ml_calorie_estimation/tests/test_data_cleaning.py
     pytest.main([__file__])
     

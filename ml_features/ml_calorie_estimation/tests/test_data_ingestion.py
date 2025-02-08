@@ -124,6 +124,8 @@ async def test_parameter_generation(recipe_parameters):
 #         assert len(stored_recipes) == len(sample_recipes)
         
 if __name__ == '__main__':
+    # Run with pytest with this command:
+    # pytest ml_features/ml_calorie_estimation/tests/test_data_ingestion.py
     pytest.main([__file__])
         
         
