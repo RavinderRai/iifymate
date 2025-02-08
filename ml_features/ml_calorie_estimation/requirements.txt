@@ -1,6 +1,8 @@
 aiohttp==3.11.11
+aiohttp==3.11.11
 fastapi==0.115.8
 feast==0.43.0
+httpx==0.28.1
 joblib==1.4.2
 mlflow==2.20.0
 mlflow_skinny==2.20.0
@@ -12,7 +14,7 @@ pydantic==2.10.6
 pytest==8.3.4
 python-dotenv==1.0.1
 PyYAML==6.0.2
-scikit_learn==1.6.1
+scikit-learn==1.5.2
 SQLAlchemy==2.0.37
 uvicorn==0.34.0
-xgboost==2.1.4
+xgboost==2.1.3
