@@ -1,12 +1,52 @@
-# IIFYMate App - AI Macro Calculator Companion
+# IFFYMate v2: AI-Powered Macro Tracking
 
 [Google Play Link](https://play.google.com/store/apps/details?id=com.qml_studios.flavour_quasar_app)
+
+Mobile app that analyzes food images and provides personalized macro/calorie tracking through AI, combining LLMs and traditional ML.
+
+## Core Features
+1. **Vision-LLM Analysis**
+  - Upload meal photos
+  - GPT-4 Vision analyzes ingredients
+  - RAG system with food database
+  
+2. **Calorie Verification**
+  - ML model validates LLM calorie estimates
+  - Cross-reference for accuracy
+  - Automated threshold checking
+
+3. **Diet Translation**
+  - Fine-tuned LLM for meal modifications
+  - Convert meals between diet types
+  - Personalized recommendations
+
+## Technical Architecture
+- Android native frontend
+- FastAPI microservices
+- MLflow for experiment tracking
+- Vector database for ingredients
+- AWS infrastructure
+- Kubernetes orchestration
+
+## Development Phases
+1. ML Models & APIs
+2. Android App Integration
+3. Cloud Infrastructure
+4. MLOps Implementation
+5. Production Optimization
+
+## Goals
+- Production-grade MLOps practices
+- Scalable cloud architecture
+- Enterprise-level code quality
+- Performance monitoring
+- Automated deployment
 
 ## Introduction
 
 The IIFYMate app is a machine learning app that calcualtes a meals' macronutrients using just its name and dietary type. The aim is to simplify flexible dieting approaches by removing the need to measure every food the user might consume with a food scale, ultimately saving time. Under the hood, 3 machine learning models have been trained on a dataset of recipes with their respective macros, when 1 model is dedicated for 1 macronutrient (protein, carbs, fats). Furthermore, the user can increase accuracy by customizing the ingredients with a simple estimation of their quantity - but still no need to get the exact food/brand of food. 
 
-<img src="images/IIFYMate_Feature_Graphic.png" alt="FlavourQuasar Feature Graphic" width="1024" height="450">
+<img src="media/IIFYMate_Feature_Graphic.png" alt="FlavourQuasar Feature Graphic" width="1024" height="450">
 
 ## Data Collection
 
@@ -20,7 +60,7 @@ The final input variables in the end are of course the recipe name and health la
 ### Target Variables
 Initially, the original target variable was just the calories. The distribution of it is below, and you can see a large range of values that may not be intuitive. This is because recipes being more than 2000 calories for 1 person is unusual, so the natural assumption is that they must have been large meals for multiple people. Since this is a regression problem, they were kept, but further exploration should be done to consider removing them depending on the apps use case. 
 
-<img src="flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
+<img src="media/flavourquasar_calorie_distribution.jpg" alt="Calorie Distribution Image" width="500" height="300">
 
 The actual target variables were all three macronutrients. For some reason there was a discrepency in the calories of a recipe and the macronutrients, since a meals total number of calories should be $`9*fat + 4*protein + 4*carbs`$, but it seemed to be lower than the calorie column that already existed. To address this, calories were calculated seperately using the macros, since ultimately the macros are the targets anyway. 
 

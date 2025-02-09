@@ -1,0 +1,14 @@
+collection:
+  target_recipes: 10000
+  min_recipes_per_category: 200
+  max_retries: 5
+  requests_per_minute: 10
+
+database:
+  username: "iifymate"
+  host: "production_host"
+  database: "recipe_data"
+
+api:
+  base_url: "https://api.edamam.com/api/recipes/v2"
+  timeout: 30
