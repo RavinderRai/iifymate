@@ -15,11 +15,23 @@ class MacroPredictor:
         self.tdidf = load("ml_features/ml_calorie_estimation/feature_store/feature_repo/data/tfidf_fitted.joblib")
         self.svd = load("ml_features/ml_calorie_estimation/feature_store/feature_repo/data/svd_fitted.joblib")
         
+        # self.models = {
+        #     'fat': mlflow.xgboost.load_model("models:/xgboost_target_Fat/latest"),
+        #     'carbs': mlflow.xgboost.load_model("models:/xgboost_target_Carbohydrates_net/latest"),
+        #     'protein': mlflow.xgboost.load_model("models:/xgboost_target_Protein/latest")
+        # }
+        
+        # For Docker deployment with local set configurations
+        mlflow.set_tracking_uri(mlflow_tracking_uri)
+        
+        # Use specific run IDs that we know have complete model files
+        base_path = "ml_features/ml_calorie_estimation/mlruns/129425056070618987"
         self.models = {
-            'fat': mlflow.xgboost.load_model("models:/xgboost_target_Fat/latest"),
-            'carbs': mlflow.xgboost.load_model("models:/xgboost_target_Carbohydrates_net/latest"),
-            'protein': mlflow.xgboost.load_model("models:/xgboost_target_Protein/latest")
+            'fat': mlflow.xgboost.load_model(f"{base_path}/271463c87afb4943b60fad27085ea055/artifacts/target_Fat_model"),
+            'carbs': mlflow.xgboost.load_model(f"{base_path}/33242e678ab34d83afc14d23c6b69879/artifacts/target_Carbohydrates_net_model"),
+            'protein': mlflow.xgboost.load_model(f"{base_path}/19279edb64514a0894fb99b592700fdd/artifacts/target_Protein_model")
         }
+        
         logger.info("Loaded models from mlflow successfully")
 
     def preprocess_input(self, text: str) -> pd.DataFrame:

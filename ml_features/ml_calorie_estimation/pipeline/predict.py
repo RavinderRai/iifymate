@@ -49,6 +49,10 @@ async def batch_predict(input_data: BatchTextInput) -> JSONResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+    
 if __name__ == "__main__":
     # Run this command in WSL in root directory to test:
     # uvicorn ml_features.ml_calorie_estimation.pipeline.predict:app --host 0.0.0.0 --port 8000 --reload
