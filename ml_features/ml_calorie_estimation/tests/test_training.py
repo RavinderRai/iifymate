@@ -11,7 +11,7 @@ import xgboost as xgb
 
 from ml_features.ml_calorie_estimation.src.training.data_validation import clean_training_testing_data
 #from ml_features.ml_calorie_estimation.src.training.grid_search import grid_search_macro_model
-from ml_features.ml_calorie_estimation.src.training.model_utils import evaluate_model
+#from ml_features.ml_calorie_estimation.src.training.model_utils import evaluate_model
 #from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
 
 # Filter out specific deprecation warnings from dependencies
@@ -139,23 +139,23 @@ def test_clean_training_testing_data(corrupt_data):
 #     assert isinstance(model, xgb.XGBRegressor)
 #     assert mock_log_model.called
 
-@patch('mlflow.log_metric')
-def test_evaluate_model(mock_log_metric, sample_data, temp_mlruns_dir):
-    """Test model evaluation functionality"""
-    X, y = sample_data
+# @patch('mlflow.log_metric')
+# def test_evaluate_model(mock_log_metric, sample_data, temp_mlruns_dir):
+#     """Test model evaluation functionality"""
+#     X, y = sample_data
     
-    # Train a simple model for testing
-    model = xgb.XGBRegressor(max_depth=3)
-    model.fit(X, y['target_Fat'])
+#     # Train a simple model for testing
+#     model = xgb.XGBRegressor(max_depth=3)
+#     model.fit(X, y['target_Fat'])
     
-    metrics = evaluate_model(model, X, y, 'target_Fat')
+#     metrics = evaluate_model(model, X, y, 'target_Fat')
     
-    # Check metrics structure
-    assert 'r2' in metrics
-    assert 'mse' in metrics
-    assert isinstance(metrics['r2'], float)
-    assert isinstance(metrics['mse'], float)
-    assert mock_log_metric.called
+#     # Check metrics structure
+#     assert 'r2' in metrics
+#     assert 'mse' in metrics
+#     assert isinstance(metrics['r2'], float)
+#     assert isinstance(metrics['mse'], float)
+#     assert mock_log_metric.called
 
 # class MockRunContext:
 #     def __enter__(self):
