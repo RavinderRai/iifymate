@@ -12,8 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ml_features /app/ml_features
 
-COPY ml_features/ml_calorie_estimation/mlruns /app/ml_features/ml_calorie_estimation/mlruns
-
 ENV PYTHONPATH=/app
 ENV ML_PROJECT_ROOT=/app/ml_features/ml_calorie_estimation
 

@@ -9,11 +9,8 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 
 logger = logging.getLogger(__name__)
 
-ML_PROJECT_ROOT = Path(__file__).parent.parent.absolute()
-MLFLOW_TRACKING_URI = os.path.join(ML_PROJECT_ROOT, "mlruns")
-
 app = FastAPI()
-predictor = MacroPredictor(MLFLOW_TRACKING_URI)
+predictor = MacroPredictor(env="local")
 
 REQUESTS = Counter('calorie_predictions_total', 'Total number of predictions made')
 PREDICTION_TIME = Histogram('prediction_latency_seconds', 'Time spent processing prediction')
@@ -58,3 +55,10 @@ if __name__ == "__main__":
     # uvicorn ml_features.ml_calorie_estimation.pipeline.predict:app --host 0.0.0.0 --port 8000 --reload
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # To test the endpoint in the terminal, try this:
+    # curl -X POST http://localhost:8000/predict \
+    # -H "Content-Type: application/json" \
+    # -d '{"text": "Vegan Black Bean Tacos, 1/2 cups of black beans, 2 tortillas"}'
+    
+    # Might need to change link if using uvicorn vs docker.

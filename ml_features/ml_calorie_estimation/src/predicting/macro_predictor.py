@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 class MacroPredictor:
     def __init__(self, env: str = "local"):
-        # self.models = {
-        #     'fat': mlflow.xgboost.load_model("models:/xgboost_target_Fat/latest"),
-        #     'carbs': mlflow.xgboost.load_model("models:/xgboost_target_Carbohydrates_net/latest"),
-        #     'protein': mlflow.xgboost.load_model("models:/xgboost_target_Protein/latest")
-        # }
         
         # Set up paths for preprocessing models
-        current_file = Path(__file__)
-        ml_calorie_path = current_file.parent.parent.parent  # This gets us to ml_calorie_estimation
+        
+        # This is for local testing
+        #current_file = Path(__file__)
+        #ml_calorie_path = current_file.parent.parent.parent  # This gets us to ml_calorie_estimation
+        
+        # This is for local testing with docker
+        ml_calorie_path = Path("/app/ml_features/ml_calorie_estimation")
         
         # Construct paths for the joblib files
         feature_store_path = ml_calorie_path / "feature_store" / "feature_repo" / "data"
@@ -43,17 +43,21 @@ class MacroPredictor:
             logger.error(f"Error loading preprocessing models: {e}")
             raise
         
-        mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
-        mlflow.set_tracking_uri(f"file://{mlflow_dir}")
+        # This is for local testing
+        #mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
+        
+        # This is for local testing with docker
+        mlflow_dir = ml_calorie_path / "mlruns"
+        tracking_uri = str(mlflow_dir.absolute())
+        logger.info(f"Setting MLflow tracking URI to: {tracking_uri}")
+        mlflow.set_tracking_uri(f"file://{tracking_uri}")
         
         # Get experiment name based on environment
-        experiment_name = "macro_nutrient_prediction_dev"# if env == "local" else "macro_nutrient_prediction_prod"
+        experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction_prod"
         experiment = mlflow.get_experiment_by_name(experiment_name)
         
         if experiment is None:
             raise ValueError(f"Experiment '{experiment_name}' not found.")
-        
-    
         
         logger.info("Loaded models from mlflow successfully")
         
@@ -78,23 +82,23 @@ class MacroPredictor:
             latest_run = model_runs.iloc[0]
             run_id = latest_run.run_id
             
-            model_uri = f"runs:/{run_id}/{model_name}"
-            self.models[macro_type] = mlflow.xgboost.load_model(model_uri)
-            logger.info(f"Loaded {macro_type} model from run: {run_id}")
+            # Construct model URI using container paths
+            model_path = mlflow_dir / experiment.experiment_id / run_id / "artifacts" / model_name
+            logger.info(f"Loading {macro_type} model from path: {model_path}")
+            
+            try:
+                self.models[macro_type] = mlflow.xgboost.load_model(str(model_path))
+                logger.info(f"Successfully loaded {macro_type} model")
+            except Exception as e:
+                logger.error(f"Error loading {macro_type} model: {e}")
+                raise
+            
+            #model_uri = f"runs:/{run_id}/{model_name}"
+            #self.models[macro_type] = mlflow.xgboost.load_model(model_uri)
+            #logger.info(f"Loaded {macro_type} model from run: {run_id}")
             
         logger.info("Successfully loaded all models from MLflow")
             
-            
-        
-        # # Use specific run IDs that we know have complete model files
-        # base_path = "ml_features/ml_calorie_estimation/mlruns/129425056070618987"
-        # self.models = {
-        #     'fat': mlflow.xgboost.load_model(f"{base_path}/271463c87afb4943b60fad27085ea055/artifacts/target_Fat_model"),
-        #     'carbs': mlflow.xgboost.load_model(f"{base_path}/33242e678ab34d83afc14d23c6b69879/artifacts/target_Carbohydrates_net_model"),
-        #     'protein': mlflow.xgboost.load_model(f"{base_path}/19279edb64514a0894fb99b592700fdd/artifacts/target_Protein_model")
-        # }
-        
-        # logger.info("Loaded models from mlflow successfully")
 
     def preprocess_input(self, text: str) -> pd.DataFrame:
         text = remove_stop_words(text)
