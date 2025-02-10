@@ -5,7 +5,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from openai import OpenAI
 
-from ml_features.llm_calorie_estimation.src.prompt import INGREDIENT_LIST_PROMPT_TEMPLATE
+from ml_features.llm_calorie_estimation.prompts.ingredients_prompt import INGREDIENT_LIST_PROMPT_TEMPLATE
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,56 +1,53 @@
 import pandas as pd
 from xgboost import XGBRegressor
 from sklearn.metrics import r2_score, mean_squared_error
-import mlflow
-import mlflow.xgboost
-from mlflow.models.signature import infer_signature
+from sklearn.model_selection import GridSearchCV
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def grid_search_parameters(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    param_grid: dict,
+    cv_folds: int = 3
+) -> dict:
+    """
+    Performs grid search to find best parameters.
+    Returns only the best parameters dict.
+    """
+    model = XGBRegressor()
+    grid_search = GridSearchCV(
+        model,
+        param_grid,
+        cv=cv_folds,
+        scoring='neg_mean_squared_error',
+        verbose=1
+    )
+    
+    grid_search.fit(X_train, y_train)
+    
+    return grid_search.best_params_
+    
 def train_macro_model(
     X_train: pd.DataFrame, 
     y_train: pd.DataFrame, 
     macro: str, 
-    model_name: str,
-    model_params: dict
+    model_params: dict,
 ):
-    """
-    Trains an XGBoost model for a specific macronutrient with MLFlow tracking.
-    """
-    with mlflow.start_run(run_name=f"{model_name}_training", nested=True):
-        mlflow.set_tag("macro_type", macro)
-        mlflow.set_tag("model_name", model_name)
-        
-        mlflow.log_params({f"{model_name}_{k}": v for k, v in model_params.items()})
-        
-        model = XGBRegressor(**model_params)
-        model.fit(X_train, y_train[macro])
-        
-        # Create an input example using the first few rows of training data
-        input_example = X_train.head(5)
-        
-        # Get model signature
-        signature = infer_signature(X_train, y_train[macro])
-        
-        # Register model with signature and input example
-        registered_model_name = f"xgboost_{model_name}"
-        mlflow.xgboost.log_model(
-            model, 
-            f"{model_name}_model",
-            registered_model_name=registered_model_name,
-            signature=signature,
-            input_example=input_example
-        )
-        
-        return model
+    """Grid search trains with a validation set, so we retrain on the whole training data using the best params"""
+    model = XGBRegressor(**model_params)
+    model.fit(X_train, y_train[macro])
     
-def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.DataFrame, macro: str) -> dict:
+    return model
+    
+def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.DataFrame, macro: str):
     """
     Evaluates the performance of an XGBoost model for a specific macronutrient.
     """
     y_pred = model.predict(X_test)
     r2 = r2_score(y_test[macro], y_pred)
     mse = mean_squared_error(y_test[macro], y_pred)
-    
-    mlflow.log_metric(f"{macro}_r2", r2)
-    mlflow.log_metric(f"{macro}_mse", mse)
-    
+        
     return {"r2": r2, "mse": mse}

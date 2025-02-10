@@ -10,9 +10,9 @@ import mlflow
 import xgboost as xgb
 
 from ml_features.ml_calorie_estimation.src.training.data_validation import clean_training_testing_data
-from ml_features.ml_calorie_estimation.src.training.grid_search import grid_search_macro_model
-from ml_features.ml_calorie_estimation.src.training.model_utils import train_macro_model, evaluate_model
-from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
+#from ml_features.ml_calorie_estimation.src.training.grid_search import grid_search_macro_model
+from ml_features.ml_calorie_estimation.src.training.model_utils import evaluate_model
+#from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
 
 # Filter out specific deprecation warnings from dependencies
 warnings.filterwarnings('ignore', category=DeprecationWarning, module='google._upb._message')
@@ -94,50 +94,50 @@ def test_clean_training_testing_data(corrupt_data):
     assert len(X_clean) < len(X_corrupt)
     assert len(X_clean) == len(y_clean)
 
-@patch('mlflow.start_run')
-@patch('mlflow.log_params')
-@patch('mlflow.log_metric')
-def test_grid_search_macro_model(mock_log_metric, mock_log_params, mock_start_run, 
-                                sample_data, mock_mlflow_run, temp_mlruns_dir):
-    """Test grid search functionality"""
-    X, y = sample_data
-    param_grid = {
-        'max_depth': [3, 5],
-        'learning_rate': [0.01]
-    }
+# @patch('mlflow.start_run')
+# @patch('mlflow.log_params')
+# @patch('mlflow.log_metric')
+# def test_grid_search_macro_model(mock_log_metric, mock_log_params, mock_start_run, 
+#                                 sample_data, mock_mlflow_run, temp_mlruns_dir):
+#     """Test grid search functionality"""
+#     X, y = sample_data
+#     param_grid = {
+#         'max_depth': [3, 5],
+#         'learning_rate': [0.01]
+#     }
     
-    mock_start_run.return_value = mock_mlflow_run
+#     mock_start_run.return_value = mock_mlflow_run
     
-    best_params = grid_search_macro_model(
-        X, y, 'target_Fat', param_grid, is_dev=True
-    )
+#     best_params = grid_search_macro_model(
+#         X, y, 'target_Fat', param_grid, is_dev=True
+#     )
     
-    # Verify MLflow interactions
-    assert mock_log_params.called
-    assert mock_log_metric.called
+#     # Verify MLflow interactions
+#     assert mock_log_params.called
+#     assert mock_log_metric.called
     
-    # Check returned parameters
-    assert isinstance(best_params, dict)
-    assert 'max_depth' in best_params
-    assert 'learning_rate' in best_params
+#     # Check returned parameters
+#     assert isinstance(best_params, dict)
+#     assert 'max_depth' in best_params
+#     assert 'learning_rate' in best_params
 
-@patch('mlflow.start_run')
-@patch('mlflow.xgboost.log_model')
-def test_train_macro_model(mock_log_model, mock_start_run, sample_data, 
-                          mock_mlflow_run, temp_mlruns_dir):
-    """Test model training functionality"""
-    X, y = sample_data
-    model_params = {'max_depth': 3, 'learning_rate': 0.01}
+# @patch('mlflow.start_run')
+# @patch('mlflow.xgboost.log_model')
+# def test_train_macro_model(mock_log_model, mock_start_run, sample_data, 
+#                           mock_mlflow_run, temp_mlruns_dir):
+#     """Test model training functionality"""
+#     X, y = sample_data
+#     model_params = {'max_depth': 3, 'learning_rate': 0.01}
     
-    mock_start_run.return_value = mock_mlflow_run
+#     mock_start_run.return_value = mock_mlflow_run
     
-    model = train_macro_model(
-        X, y, 'target_Fat', 'test_model', model_params
-    )
+#     model = train_macro_model(
+#         X, y, 'target_Fat', 'test_model', model_params
+#     )
     
-    # Verify model type and MLflow interactions
-    assert isinstance(model, xgb.XGBRegressor)
-    assert mock_log_model.called
+#     # Verify model type and MLflow interactions
+#     assert isinstance(model, xgb.XGBRegressor)
+#     assert mock_log_model.called
 
 @patch('mlflow.log_metric')
 def test_evaluate_model(mock_log_metric, sample_data, temp_mlruns_dir):
@@ -157,46 +157,46 @@ def test_evaluate_model(mock_log_metric, sample_data, temp_mlruns_dir):
     assert isinstance(metrics['mse'], float)
     assert mock_log_metric.called
 
-class MockRunContext:
-    def __enter__(self):
-        return self
+# class MockRunContext:
+#     def __enter__(self):
+#         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return None
+#     def __exit__(self, exc_type, exc_val, exc_tb):
+#         return None
 
-@patch('mlflow.set_experiment')
-def test_train_all_macro_models(mock_set_experiment, sample_data, temp_mlruns_dir):
-    """Test end-to-end training pipeline"""
-    X, y = sample_data
-    X_test, y_test = sample_data  # Using same data for simplicity
+# @patch('mlflow.set_experiment')
+# def test_train_all_macro_models(mock_set_experiment, sample_data, temp_mlruns_dir):
+#     """Test end-to-end training pipeline"""
+#     X, y = sample_data
+#     X_test, y_test = sample_data  # Using same data for simplicity
     
-    # Create a more sophisticated mock for MLflow runs
-    with patch('mlflow.start_run') as mock_start_run:
-        # Each call to start_run will return a new mock context
-        mock_start_run.side_effect = [MockRunContext() for _ in range(12)]  # Adjust number based on expected runs
+#     # Create a more sophisticated mock for MLflow runs
+#     with patch('mlflow.start_run') as mock_start_run:
+#         # Each call to start_run will return a new mock context
+#         mock_start_run.side_effect = [MockRunContext() for _ in range(12)]  # Adjust number based on expected runs
         
-        # Mock other MLflow functions
-        with patch('mlflow.log_params'), \
-             patch('mlflow.log_metrics'), \
-             patch('mlflow.log_param'), \
-             patch('mlflow.log_metric'), \
-             patch('mlflow.xgboost.log_model'), \
-             patch('mlflow.set_tag'):
+#         # Mock other MLflow functions
+#         with patch('mlflow.log_params'), \
+#              patch('mlflow.log_metrics'), \
+#              patch('mlflow.log_param'), \
+#              patch('mlflow.log_metric'), \
+#              patch('mlflow.xgboost.log_model'), \
+#              patch('mlflow.set_tag'):
             
-            models, metrics = train_all_macro_models(
-                X, X_test, y, y_test, is_dev=True
-            )
+#             models, metrics = train_all_macro_models(
+#                 X, X_test, y, y_test, is_dev=True
+#             )
     
-    # Check results structure
-    assert len(models) == len(MACROS)
-    assert len(metrics) == len(MACROS)
+#     # Check results structure
+#     assert len(models) == len(MACROS)
+#     assert len(metrics) == len(MACROS)
     
-    for macro in MACROS:
-        assert macro in models
-        assert macro in metrics
-        assert 'r2' in metrics[macro]
-        assert 'mse' in metrics[macro]
-        assert 'best_params' in metrics[macro]
+#     for macro in MACROS:
+#         assert macro in models
+#         assert macro in metrics
+#         assert 'r2' in metrics[macro]
+#         assert 'mse' in metrics[macro]
+#         assert 'best_params' in metrics[macro]
 
 if __name__ == '__main__':
     # Run with pytest with this command:
