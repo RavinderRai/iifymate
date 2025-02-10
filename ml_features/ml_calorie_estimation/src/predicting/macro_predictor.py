@@ -5,39 +5,101 @@ import pandas as pd
 import logging
 from joblib import load
 from pathlib import Path
+
 from ml_features.ml_calorie_estimation.src.feature_engineering.text_processing import remove_stop_words, lemmatizing
 
 logger = logging.getLogger(__name__)
 
 class MacroPredictor:
-    def __init__(self, mlflow_tracking_uri: str):
-        mlflow.set_tracking_uri(mlflow_tracking_uri)
-        self.tdidf = load("ml_features/ml_calorie_estimation/feature_store/feature_repo/data/tfidf_fitted.joblib")
-        self.svd = load("ml_features/ml_calorie_estimation/feature_store/feature_repo/data/svd_fitted.joblib")
-        
+    def __init__(self, env: str = "local"):
         # self.models = {
         #     'fat': mlflow.xgboost.load_model("models:/xgboost_target_Fat/latest"),
         #     'carbs': mlflow.xgboost.load_model("models:/xgboost_target_Carbohydrates_net/latest"),
         #     'protein': mlflow.xgboost.load_model("models:/xgboost_target_Protein/latest")
         # }
         
-        # For Docker deployment with local set configurations
-        mlflow.set_tracking_uri(mlflow_tracking_uri)
+        # Set up paths for preprocessing models
+        current_file = Path(__file__)
+        ml_calorie_path = current_file.parent.parent.parent  # This gets us to ml_calorie_estimation
         
-        # Use specific run IDs that we know have complete model files
-        base_path = "ml_features/ml_calorie_estimation/mlruns/129425056070618987"
-        self.models = {
-            'fat': mlflow.xgboost.load_model(f"{base_path}/271463c87afb4943b60fad27085ea055/artifacts/target_Fat_model"),
-            'carbs': mlflow.xgboost.load_model(f"{base_path}/33242e678ab34d83afc14d23c6b69879/artifacts/target_Carbohydrates_net_model"),
-            'protein': mlflow.xgboost.load_model(f"{base_path}/19279edb64514a0894fb99b592700fdd/artifacts/target_Protein_model")
-        }
+        # Construct paths for the joblib files
+        feature_store_path = ml_calorie_path / "feature_store" / "feature_repo" / "data"
+        tfidf_path = feature_store_path / "tfidf_fitted.joblib"
+        svd_path = feature_store_path / "svd_fitted.joblib"
+        
+        # Load preprocessing models with error handling
+        try:
+            logger.info(f"Loading TF-IDF from {tfidf_path}")
+            self.tfidf = load(tfidf_path)
+            logger.info("TF-IDF loaded successfully")
+            
+            logger.info(f"Loading SVD from {svd_path}")
+            self.svd = load(svd_path)
+            logger.info("SVD loaded successfully")
+        except FileNotFoundError as e:
+            logger.error(f"Could not find preprocessing model file: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error loading preprocessing models: {e}")
+            raise
+        
+        mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
+        mlflow.set_tracking_uri(f"file://{mlflow_dir}")
+        
+        # Get experiment name based on environment
+        experiment_name = "macro_nutrient_prediction_dev"# if env == "local" else "macro_nutrient_prediction_prod"
+        experiment = mlflow.get_experiment_by_name(experiment_name)
+        
+        if experiment is None:
+            raise ValueError(f"Experiment '{experiment_name}' not found.")
+        
+    
         
         logger.info("Loaded models from mlflow successfully")
+        
+        # Get run IDs for each model
+        runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
+        
+        # Initialize models dictionary
+        self.models = {}
+        
+        # Map of macro types to their model names
+        macro_types = {
+            'fat': 'fat',
+            'carbs': 'carbohydrates_net',
+            'protein': 'protein'
+        }
+        
+        for macro_type, model_name in macro_types.items():
+            model_runs = runs[runs['tags.model_name'] == model_name]
+            if len(model_runs) == 0:
+                raise ValueError(f"No runs found for '{model_name}'.")
+            
+            latest_run = model_runs.iloc[0]
+            run_id = latest_run.run_id
+            
+            model_uri = f"runs:/{run_id}/{model_name}"
+            self.models[macro_type] = mlflow.xgboost.load_model(model_uri)
+            logger.info(f"Loaded {macro_type} model from run: {run_id}")
+            
+        logger.info("Successfully loaded all models from MLflow")
+            
+            
+        
+        # # Use specific run IDs that we know have complete model files
+        # base_path = "ml_features/ml_calorie_estimation/mlruns/129425056070618987"
+        # self.models = {
+        #     'fat': mlflow.xgboost.load_model(f"{base_path}/271463c87afb4943b60fad27085ea055/artifacts/target_Fat_model"),
+        #     'carbs': mlflow.xgboost.load_model(f"{base_path}/33242e678ab34d83afc14d23c6b69879/artifacts/target_Carbohydrates_net_model"),
+        #     'protein': mlflow.xgboost.load_model(f"{base_path}/19279edb64514a0894fb99b592700fdd/artifacts/target_Protein_model")
+        # }
+        
+        # logger.info("Loaded models from mlflow successfully")
 
     def preprocess_input(self, text: str) -> pd.DataFrame:
         text = remove_stop_words(text)
         text = lemmatizing(text)
-        tfidf_vector = self.tdidf.transform([text])
+        tfidf_vector = self.tfidf.transform([text])
         svd_features = self.svd.transform(tfidf_vector)
         return svd_features #pd.DataFrame(svd_features, columns=[f"component_{i}" for i in range(1, svd_features.shape[1]+1)])
     

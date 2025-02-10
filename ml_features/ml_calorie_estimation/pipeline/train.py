@@ -68,15 +68,26 @@ def run_training(env:str = "local"):
     X_test, y_test = clean_training_testing_data(X_test, y_test, macros)
     
     
-    mlflow.set_tracking_uri(f"file://{MLFLOW_TRACKING_URI}")
+    # mlflow.set_tracking_uri(f"file://{MLFLOW_TRACKING_URI}")
+    # experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction_prod"
     
-    _, metrics = train_all_macro_models(X_train, X_test, y_train, y_test, env)
+    # try:
+    #     mlflow.create_experiment(
+    #         experiment_name,
+    #         artifact_location=f"file://{os.path.join(MLFLOW_TRACKING_URI, experiment_name)}"
+    #     )
+    # except Exception:
+    #     pass  # Experiment already exists
     
-    for macro in ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']:
-        logging.info(f"\n{macro.upper()} Results:")
-        logging.info(f"R2 Score: {metrics[macro]['r2']:.4f}")
-        logging.info(f"MSE: {metrics[macro]['mse']:.4f}")
-        logging.info("Best Parameters: %s", metrics[macro]['best_params'])
+    #mlflow.set_experiment(experiment_name)
+    
+    _, _ = train_all_macro_models(X_train, X_test, y_train, y_test, env)
+    
+    # for macro in ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']:
+    #     logging.info(f"\n{macro.upper()} Results:")
+    #     logging.info(f"R2 Score: {metrics[macro]['r2']:.4f}")
+    #     logging.info(f"MSE: {metrics[macro]['mse']:.4f}")
+    #     logging.info("Best Parameters: %s", metrics[macro]['best_params'])
 
 if __name__ == "__main__":
     # Run this command in WSL in root directory to test:
