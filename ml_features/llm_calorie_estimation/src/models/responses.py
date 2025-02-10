@@ -7,7 +7,7 @@ class IngredientResponse(BaseModel):
     unit: list[str]
 
 class HealthLabelResponse(BaseModel):
-    labels: List[str]
+    labels: str
 
-class RecipeNameResponse(BaseModel):
+class RecipeLabelResponse(BaseModel):
     name: str

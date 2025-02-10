@@ -1,0 +1,15 @@
+model:
+  name: "gpt-4o-mini"
+  max_tokens: 1000
+
+valid_health_labels:
+  - Vegan
+  - Vegetarian
+  - Pescatarian
+  - Paleo
+  - Red-Meat-Free
+  - Mediterranean
+
+logging:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
