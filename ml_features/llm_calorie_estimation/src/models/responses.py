@@ -1,13 +1,10 @@
-from typing import List
 from pydantic import BaseModel
 
 class IngredientResponse(BaseModel):
-    name: list[str]
-    amount: list[str]
-    unit: list[str]
+    ingredients: list[str]
 
 class HealthLabelResponse(BaseModel):
-    labels: str
+    health_label: str
 
 class RecipeLabelResponse(BaseModel):
-    name: str
+    recipe_label: str
