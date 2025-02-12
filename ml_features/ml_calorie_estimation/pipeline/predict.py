@@ -57,8 +57,6 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
     # To test the endpoint in the terminal, try this:
-    # curl -X POST http://localhost:8000/predict \
-    # -H "Content-Type: application/json" \
-    # -d '{"text": "Vegan Black Bean Tacos, 1/2 cups of black beans, 2 tortillas"}'
+    # curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d '{"text": "Vegan Black Bean Tacos, 1/2 cups of black beans, 2 tortillas"}'
     
     # Might need to change link if using uvicorn vs docker.

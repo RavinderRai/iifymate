@@ -7,7 +7,7 @@ RUN apt-get update && \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY ml_features/ml_calorie_estimation/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ml_features /app/ml_features
