@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Testing git change with this comment
         val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
 
         var selectedDietType = ""
