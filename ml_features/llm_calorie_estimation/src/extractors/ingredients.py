@@ -3,9 +3,9 @@ from ml_features.llm_calorie_estimation.src.models.responses import IngredientRe
 from ml_features.llm_calorie_estimation.src.extractors.base import VisionExtractor
 
 class IngredientExtractor(VisionExtractor):
-    def __init__(self, api_key: str, prompt: str):
+    def __init__(self, api_key: str):
         super().__init__(api_key)
-        self.prompt = prompt
         
-    def extract(self, image_path: str | Path) -> IngredientResponse:
-        return self._get_vision_response(image_path, self.prompt, IngredientResponse)
+    def extract(self, image_path: str | Path, prompt: str) -> IngredientResponse:
+        return self._get_gpt_response(image_path, prompt, IngredientResponse)
+    

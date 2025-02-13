@@ -17,3 +17,60 @@ services:
     command: >
       sh -c "ls -la /app/ml_features/ml_calorie_estimation/mlruns &&
              uvicorn ml_features.ml_calorie_estimation.pipeline.predict:app --host 0.0.0.0 --port 8000"
+    networks:
+      - calorie_estimation-network
+      - monitoring
+
+  llm_calorie_estimation:
+    build:
+      context: .  # Uses root directory as build context
+      dockerfile: infra/docker/services/llm_calorie_estimation/Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+    networks:
+      - calorie_estimation-network
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: infra/docker/services/orchestration/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - llm_calorie_estimation
+      - ml_calorie_predictor
+    networks:
+      - calorie_estimation-network
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./infra/docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./infra/docker/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+networks:
+  calorie_estimation-network:
+  monitoring:
