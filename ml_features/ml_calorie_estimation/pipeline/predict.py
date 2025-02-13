@@ -32,6 +32,7 @@ async def predict(input_data: TextInput) -> JSONResponse:
         REQUESTS.inc()
         with PREDICTION_TIME.time():
             result = predictor.predict(input_data.text)
+        logger.info(f"Prediction result: {result}")
         return JSONResponse(content=result)
     
     except Exception as e:

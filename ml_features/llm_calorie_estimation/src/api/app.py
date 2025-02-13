@@ -59,10 +59,11 @@ async def health_check():
 
 if __name__ == "__main__":
     # To test this, run this in WSL in root directory:
-    # uvicorn ml_features.llm_calorie_estimation.src.api.app:app
+    # uvicorn ml_features.llm_calorie_estimation.src.api.app:app --reload --port 8001
     # Then, try this sample input in another terminal:
     # curl -X POST "http://localhost:8000/analyze-meal/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
     # Or change the port for docker
     # curl -X POST "http://localhost:8001/analyze-meal/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
+    
