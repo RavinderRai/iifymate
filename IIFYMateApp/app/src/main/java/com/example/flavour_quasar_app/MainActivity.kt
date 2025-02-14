@@ -42,7 +42,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.util.Log
 import android.Manifest
+import androidx.activity.result.contract.ActivityResultContracts
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -57,6 +59,26 @@ class MainActivity : ComponentActivity() {
     private var photoUri: Uri? = null
     private val mlApiService = MLApiService()
     private val macroPredictor = MacroPredictor("http://localhost:8000")
+
+    private lateinit var buttonTestMode: Button
+
+
+
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        Log.d("Camera", "Take picture result: $success")
+        if (success) {
+            photoUri?.let { uri ->
+                Log.d("Camera", "Processing image with URI: $uri")
+                processImage(uri)
+            } ?: run {
+                Log.e("Camera", "Error: photoUri is null")
+                Toast.makeText(this, "Error: No image captured", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Log.e("Camera", "Camera capture failed")
+            Toast.makeText(this, "Camera capture cancelled or failed", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     companion object {
         private const val CAMERA_PERMISSION_CODE = 1
@@ -93,6 +115,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+
+
         buttonTakePhoto.setOnClickListener {
             if (checkCameraPermission()) {
                 openCamera()
@@ -100,6 +124,9 @@ class MainActivity : ComponentActivity() {
                 requestCameraPermission()
             }
         }
+
+        buttonTestMode = findViewById<Button>(R.id.test_mode)
+        buttonTestMode.setOnClickListener { loadTestImage() }
 
 
 
@@ -205,39 +232,69 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openCamera() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         try {
-            val photoFile = createImageFile()
-            photoUri = FileProvider.getUriForFile(
-                this,
-                "${applicationContext.packageName}.provider",
-                photoFile
-            )
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-            startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
+            Log.d("Camera", "Opening camera...")
+            // Start with a basic camera intent
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                val photoFile = createImageFile()
+                photoUri = FileProvider.getUriForFile(
+                    this,
+                    "${applicationContext.packageName}.provider",
+                    photoFile
+                )
+                Log.d("Camera", "Created URI: $photoUri")
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
+            } else {
+                Log.e("Camera", "No camera app available")
+                Toast.makeText(this, "No camera app available", Toast.LENGTH_SHORT).show()
+            }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error opening camera", Toast.LENGTH_SHORT).show()
+            Log.e("Camera", "Error opening camera", e)
+            Toast.makeText(this, "Error opening camera: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun createImageFile(): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-            "MEAL_${timeStamp}_",
-            ".jpg",
-            storageDir
-        )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
-            photoUri?.let { uri ->
-                processImage(uri)
+        Log.d("Camera", "onActivityResult: requestCode=$requestCode, resultCode=$resultCode")
+
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                photoUri?.let { uri ->
+                    Log.d("Camera", "Processing image with URI: $uri")
+                    processImage(uri)
+                } ?: run {
+                    Log.e("Camera", "No photo URI available")
+                    Toast.makeText(this, "Error: No image captured", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.e("Camera", "Camera result not OK: $resultCode")
+                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    private fun createImageFile(): File {
+        try {
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val storageDir = getExternalFilesDir("Pictures")
+            Log.d("Camera", "Storage directory: ${storageDir?.absolutePath}")
+            return File.createTempFile(
+                "MEAL_${timeStamp}_",
+                ".jpg",
+                storageDir
+            ).apply {
+                Log.d("Camera", "Created temp file: $absolutePath")
+            }
+        } catch (e: Exception) {
+            Log.e("Camera", "Error creating image file", e)
+            throw e
+        }
+    }
+
+
 
     private fun processImage(uri: Uri) {
         val loadingDialog = showLoadingDialog()
@@ -271,6 +328,56 @@ class MainActivity : ComponentActivity() {
                 loadingDialog.dismiss()
             }
         }
+    }
+
+
+    private fun enableTestMode() {
+        findViewById<Button>(R.id.test_mode).apply {
+            visibility = View.VISIBLE
+            setOnClickListener { loadTestImage() }
+        }
+    }
+
+    private fun loadTestImage() {
+        try {
+            // Load a test image from your app's resources
+            val inputStream = resources.openRawResource(R.raw.test_meal)
+            val file = createImageFile()
+            file.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+
+            photoUri = FileProvider.getUriForFile(
+                this,
+                "${applicationContext.packageName}.provider",
+                file
+            )
+
+            processImage(photoUri!!)
+        } catch (e: Exception) {
+            Log.e("TestImage", "Error loading test image", e)
+        }
+    }
+
+
+    private suspend fun testApiEndpoint() {
+        try {
+            val testImageBytes = resources.openRawResource(R.raw.test_meal).readBytes()
+            val result = mlApiService.uploadImage(createTestUri(testImageBytes), this)
+            Log.d("API Test", "Result: $result")
+        } catch (e: Exception) {
+            Log.e("API Test", "Error testing endpoint", e)
+        }
+    }
+
+    private fun createTestUri(bytes: ByteArray): Uri {
+        val file = createImageFile()
+        file.writeBytes(bytes)
+        return FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.provider",
+            file
+        )
     }
 
     private fun showPopupWindow(userInput: String, selectedDietType: String, ingredientsList: List<String>) {

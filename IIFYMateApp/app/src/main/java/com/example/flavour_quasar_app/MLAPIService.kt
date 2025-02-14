@@ -13,7 +13,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class MLApiService(private val baseUrl: String = "http://localhost:8002/estimate-calories/") {
+class MLApiService(private val baseUrl: String = "http://10.0.2.2:8002") {
     private val client = OkHttpClient()
 
     suspend fun uploadImage(imageUri: Uri, context: Context): PredictedValues? {
@@ -53,15 +53,17 @@ class MLApiService(private val baseUrl: String = "http://localhost:8002/estimate
 
             if (response.isSuccessful) {
                 val responseString = response.body?.string() ?: return null
+                Log.d("MLApiService", "Response: $responseString")  // Add this for debugging
                 val jsonResponse = JSONObject(responseString)
 
                 return PredictedValues(
-                    fat = jsonResponse.getJSONObject("data").getInt("fat"),
-                    carbs = jsonResponse.getJSONObject("data").getInt("carbs"),
-                    protein = jsonResponse.getJSONObject("data").getInt("protein"),
-                    calories = jsonResponse.getJSONObject("data").getInt("calories")
+                    fat = jsonResponse.getInt("fat"),
+                    carbs = jsonResponse.getInt("carbs"),
+                    protein = jsonResponse.getInt("protein"),
+                    calories = jsonResponse.getInt("calories")
                 )
             } else {
+                Log.e("MLApiService", "Error response: ${response.code} - ${response.body?.string()}")
                 null
             }
         } catch (e: Exception) {
