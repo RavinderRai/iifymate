@@ -4,11 +4,11 @@ collection:
   requests_per_minute: 10
   max_retries: 3
 
+api:
+  base_url: "https://api.edamam.com/api/recipes/v2"
+  timeout: 30
+
 database:
   username: "iifymate"
   host: "localhost"
   database: "recipe_data"
-
-api:
-  base_url: "https://api.edamam.com/api/recipes/v2"
-  timeout: 30

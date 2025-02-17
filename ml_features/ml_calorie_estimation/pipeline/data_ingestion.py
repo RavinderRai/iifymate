@@ -24,7 +24,7 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
     api_config = create_api_config(config.api)
     collector_config = create_collector_config(config.collection)
     recipe_params = create_recipe_parameters()
-    db_config = create_db_config(config.database)
+    db_config = create_db_config(config.database, env=env)
     
     semaphore = asyncio.Semaphore(collector_config.requests_per_minute)
     
@@ -70,7 +70,9 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
 if __name__ == "__main__":
     # Run this command in WSL in root directory to test:
     # python -m ml_features.ml_calorie_estimation.pipeline.data_ingestion
-    recipes, stats = asyncio.run(collect_and_store_recipes(env="local", delete_all_recipes=True))
+    import os
+    environment = os.getenv("ENV", "local")
+    recipes, stats = asyncio.run(collect_and_store_recipes(env=environment, delete_all_recipes=True))
     
     # Display statistics only when run as main script
     logger.info("\n=== Collection Statistics ===")
