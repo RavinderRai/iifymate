@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool = False):
     """Main function to collect and store recipes"""
+    logger.info(f"Loading configuration for environment: {env}")
     config = load_config(env)
     
     # Initialize configurations

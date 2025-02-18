@@ -20,9 +20,10 @@ def run_feature_transformations(env: str = "local"):
     # Load data from database
     logger.info("Loading clean recipe data from database.")
     config = load_config(env)
-    db_config = create_db_config(config.database)
+    db_config = create_db_config(config.database, env=env)
     db_manager = DatabaseManager(db_config)
     session = db_manager.Session()
+    
     query = session.query(CleanRecipe).statement
     df = pd.read_sql(query, session.bind)
     logger.info("Successfully loaded clean recipe data.")
@@ -99,5 +100,6 @@ def run_feature_transformations(env: str = "local"):
 if __name__ == "__main__":
     # Run this command in WSL in root directory to test:
     # python -m ml_features.ml_calorie_estimation.pipeline.feature_engineering
-    
-    run_feature_transformations(env="local")
+    import os
+    environment = os.getenv("ENV", "local")
+    run_feature_transformations(env=environment)
