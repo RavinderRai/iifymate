@@ -20,6 +20,7 @@ aws:
   s3_bucket: "iifymate-ml-data"
   model_prefix: "models/"
   data_prefix: "datasets/"
+  feature_store_prefix: "feature_store/"
   sagemaker:
     instance_type: "ml.t2.medium"  # Free tier eligible
     training_job_timeout: 3600

@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
 
@@ -48,7 +49,20 @@ class CollectorConfig(BaseModel):
     requests_per_minute: int
     max_retries: int
     
+class SageMakerConfig(BaseModel):
+    instance_type: str
+    training_job_timeout: int
+    
+class AWSConfig(BaseModel):
+    region: str
+    s3_bucket: str
+    model_prefix: str
+    data_prefix: str
+    feature_store_prefix: str = "feature_store/"
+    sagemaker: SageMakerConfig
+    
 class Config(BaseModel):
     collection: CollectorConfig
     database: DatabaseConfig
     api: APIConfig
+    aws: Optional[AWSConfig] = None
