@@ -24,3 +24,10 @@ aws:
   sagemaker:
     instance_type: "ml.t2.medium"  # Free tier eligible
     training_job_timeout: 3600
+    role: "${SAGEMAKER_ROLE_ARN}"  # Will be populated from env var
+    output_path: "s3://iifymate-ml-data/models/"  # Where SageMaker saves models
+    max_retries: 3
+    max_parallel_jobs: 1  # For free tier, keep this at 1
+    tags:
+      Project: "iifymate"
+      Environment: "development"
