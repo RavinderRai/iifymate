@@ -9,7 +9,7 @@ import shutil
 
 from ml_features.ml_calorie_estimation.src.training.model_base import XGBoostModel
 from ml_features.ml_calorie_estimation.src.training.model_utils import grid_search_parameters, train_macro_model, evaluate_model
-from ml_features.ml_calorie_estimation.src.data_ingestion.utils import load_config
+from ml_features.ml_calorie_estimation.src.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ def clean_mlruns():
     if mlflow_dir.exists():
         shutil.rmtree(mlflow_dir)
     os.makedirs(mlflow_dir)
+
 
 def setup_mlflow(env: str = "local", aws_config: Dict = None):
     """Set up MLflow tracking"""
@@ -83,94 +84,55 @@ def train_all_macro_models(
         if mlflow.active_run():
             mlflow.end_run()
             
-        with mlflow.start_run(run_name=model_name) as run:
-            # Initialize model
-            model = XGBoostModel(
-                model_name=macro,
-                env=env,
-                config=config.aws if env == "production" else None
-            )
+        with mlflow.start_run(run_name=model_name) as run:            
+            logger.info(f"MLflow run ID: {run.info.run_id}")
             
             # Set tags
             mlflow.set_tag("macro_type", macro)
             mlflow.set_tag("model_name", model_name)
             mlflow.set_tag("environment", env)
             
+            # Find best parameters
+            logger.info("Finding best parameters...")
+            best_params = grid_search_parameters(X_train, y_train[macro], param_grid)
+            mlflow.log_params(best_params)
+            
             # Train model
-            model.train(X_train, y_train, param_grid)
+            logger.info("Training final model with best params...")
+            model = train_macro_model(X_train, y_train, macro, best_params)
             
             # Evaluate
-            metrics = model.evaluate(X_test, y_test)
+            logger.info("Evaluating model...")
+            metrics = evaluate_model(model, X_test, y_test, macro)
             mlflow.log_metrics(metrics)
             
             # Log model
-            if env == "local":
-                model.save(f"models/{model_name}")
-                mlflow.log_artifact(f"models/{model_name}")
-            else:
-                # Model is already saved in S3 by SageMaker
-                mlflow.log_artifact(f"s3://{config.aws.bucket}/models/{model_name}")
+            logger.info("Logging model...")
+            signature = mlflow.models.infer_signature(
+                X_train,
+                model.predict(X_train)
+            )
+            input_example = X_train.head(5)
+            
+            mlflow.xgboost.log_model(
+                model,
+                model_name,
+                signature=signature,
+                input_example=input_example
+            )
             
             # Store results
             models[macro] = model
             all_metrics[macro] = {
                 **metrics,
-                'best_params': model.best_params,
+                'best_params': best_params,
                 'run_id': run.info.run_id
             }
             
+            # Log results
             logger.info(f"Run ID: {run.info.run_id}")
-            logger.info(f"Best parameters: {model.best_params}")
+            logger.info(f"Best parameters: {best_params}")
             logger.info(f"Metrics: {metrics}")
-            
-            # logger.info(f"MLflow run ID: {run.info.run_id}")
-            
-            # # Set tags
-            # mlflow.set_tag("macro_type", macro)
-            # mlflow.set_tag("model_name", model_name)
-            # mlflow.set_tag("environment", env)
-            
-            # # Find best parameters
-            # logger.info("Finding best parameters...")
-            # best_params = grid_search_parameters(X_train, y_train[macro], param_grid)
-            # mlflow.log_params(best_params)
-            
-            # # Train model
-            # logger.info("Training final model with best params...")
-            # model = train_macro_model(X_train, y_train, macro, best_params)
-            
-            # # Evaluate
-            # logger.info("Evaluating model...")
-            # metrics = evaluate_model(model, X_test, y_test, macro)
-            # mlflow.log_metrics(metrics)
-            
-            # # Log model
-            # logger.info("Logging model...")
-            # signature = mlflow.models.infer_signature(
-            #     X_train,
-            #     model.predict(X_train)
-            # )
-            # input_example = X_train.head(5)
-            
-            # mlflow.xgboost.log_model(
-            #     model,
-            #     model_name,
-            #     signature=signature,
-            #     input_example=input_example
-            # )
-            
-            # # Store results
-            # models[macro] = model
-            # all_metrics[macro] = {
-            #     **metrics,
-            #     'best_params': best_params,
-            #     'run_id': run.info.run_id
-            # }
-            
-            # # Log results
-            # logger.info(f"Run ID: {run.info.run_id}")
-            # logger.info(f"Best parameters: {best_params}")
-            # logger.info(f"Metrics: {metrics}")
     
     # Make sure we end the final run
     if mlflow.active_run():

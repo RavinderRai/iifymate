@@ -7,7 +7,7 @@ from joblib import dump
 import boto3
 from botocore.exceptions import ClientError
 
-from ml_features.ml_calorie_estimation.src.data_ingestion.utils import load_config
+from ml_features.ml_calorie_estimation.src.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

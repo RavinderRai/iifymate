@@ -86,7 +86,7 @@ def load_config(env: Literal["local", "production"] = "local") -> Config:
         collection=config_dict['collection'],
         database=config_dict['database'],
         api=config_dict['api'],
-        aws=config_dict['aws']
+        aws=config_dict['aws'] if 'aws' in config_dict else None
     )
 
 

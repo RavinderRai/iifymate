@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import logging
 
-from ml_features.ml_calorie_estimation.src.data_ingestion.utils import create_db_config, load_config
+from ml_features.ml_calorie_estimation.src.utils import create_db_config, load_config
 from ml_features.ml_calorie_estimation.src.databases.manager import DatabaseManager
 from ml_features.ml_calorie_estimation.src.feature_engineering.xgboost_transformations import xgboost_transformations
 from ml_features.ml_calorie_estimation.src.databases.models.clean_data import CleanRecipe

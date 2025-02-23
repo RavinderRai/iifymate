@@ -7,7 +7,7 @@ class DatabaseConfig(BaseModel):
     password: str # will be set with environment variable
     host: str
     database: str
-    port: Optional[int] # Added for RDS
+    port: Optional[int] = None # Added for RDS
     env: str = "local"
     
     @property

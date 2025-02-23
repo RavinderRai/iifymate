@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from ml_features.ml_calorie_estimation.src.data_ingestion.utils import (
+from ml_features.ml_calorie_estimation.src.utils import (
     create_db_config,
     load_config
 )
