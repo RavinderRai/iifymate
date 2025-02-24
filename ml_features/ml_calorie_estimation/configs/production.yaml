@@ -22,7 +22,7 @@ aws:
   data_prefix: "datasets/"
   feature_store_prefix: "feature_store/"
   sagemaker:
-    instance_type: "ml.t2.medium"  # Free tier eligible
+    instance_type: "ml.m4.xlarge"  # Free tier eligible
     training_job_timeout: 3600
     role: "${SAGEMAKER_ROLE_ARN}"  # Will be populated from env var
     output_path: "s3://iifymate-ml-data/models/"  # Where SageMaker saves models

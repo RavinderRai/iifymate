@@ -3,7 +3,10 @@ from pathlib import Path
 import logging
 
 from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
-from ml_features.ml_calorie_estimation.src.training.data_loader import load_training_data, clean_training_testing_data
+from ml_features.ml_calorie_estimation.src.training.data_loader import get_feature_paths, load_training_data, clean_training_testing_data
+from ml_features.ml_calorie_estimation.src.training.models.xgboost.model import XGBoostModel
+from ml_features.ml_calorie_estimation.src.training.models.xgboost.sagemaker_model import SageMakerModel
+from ml_features.ml_calorie_estimation.src.training.experiment_tracker import MLFlowExperimentTracker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,19 +24,42 @@ def run_training(env:str = "local"):
     Returns:
     None
     """
-    X_train, X_test, y_train, y_test = load_training_data(env)
-    
     macros = ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']
     
-    # Clean both train and test data
-    logger.info("Cleaning training data...")
-    X_train, y_train = clean_training_testing_data(X_train, y_train, macros)
+    param_grid = {
+        'learning_rate': [0.01, 0.01],
+        #'max_depth': [3, 5],
+        #'n_estimators': [100]
+    }
+    X_train, X_test, y_train, y_test = load_training_data(env)
     
-    logger.info("Cleaning test data...")
-    X_test, y_test = clean_training_testing_data(X_test, y_test, macros)
-    
-    _, _ = train_all_macro_models(X_train, X_test, y_train, y_test, env)
-    
+    if env == "local":
+        
+        # Clean both train and test data
+        logger.info("Cleaning training data...")
+        X_train, y_train = clean_training_testing_data(X_train, y_train, macros)
+        
+        logger.info("Cleaning test data...")
+        X_test, y_test = clean_training_testing_data(X_test, y_test, macros)
+        
+        model_instance = XGBoostModel()
+        experiment_tracker = MLFlowExperimentTracker(model_instance, macros, env)
+        experiment_tracker.start_mlflow_run(
+            X_train, 
+            y_train, 
+            X_test, 
+            y_test,
+            param_grid
+        )
+        
+    elif env == "production":        
+        model_instance = SageMakerModel(env)
+        xgb_model = model_instance._train_macro_model(X_train, y_train, macros[0], {"learning_rate": 0.01, "max_depth": 3, "n_estimators": 100})
+        
+        metrics = model_instance._evaluate_macro_model(X_train, y_train, macros[0], param_grid)
+        
+        
+        
 
 
 if __name__ == "__main__":

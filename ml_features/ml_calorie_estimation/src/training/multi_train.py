@@ -7,7 +7,6 @@ import os
 import shutil
 
 
-from ml_features.ml_calorie_estimation.src.training.model_base import XGBoostModel
 from ml_features.ml_calorie_estimation.src.training.model_utils import grid_search_parameters, train_macro_model, evaluate_model
 from ml_features.ml_calorie_estimation.src.utils import load_config
 

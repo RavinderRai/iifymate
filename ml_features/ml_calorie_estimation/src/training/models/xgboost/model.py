@@ -4,7 +4,7 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import GridSearchCV
 import logging
 
-from ml_features.ml_calorie_estimation.src.training.model_base import ModelBase
+from ml_features.ml_calorie_estimation.src.training.models.model_base import ModelBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ class XGBoostModel(ModelBase):
         return {"r2": r2, "mse": mse}
         
     def _hyperparameter_tuning(
+        self,
         X_train: pd.DataFrame,
         y_train: pd.Series,
         param_grid: dict,
@@ -60,7 +61,7 @@ class XGBoostModel(ModelBase):
         """
         Performs grid search to find best parameters.
         Returns only the best parameters dict.
-        """
+        """        
         model = XGBRegressor()
         grid_search = GridSearchCV(
             model,

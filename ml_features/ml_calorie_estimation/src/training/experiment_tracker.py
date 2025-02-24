@@ -2,7 +2,7 @@ import os
 import mlflow
 from pathlib import Path
 import logging
-
+import datetime
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,8 @@ class MLFlowExperimentTracker:
         
         mlflow.set_tracking_uri(mlflow_tracking_uri)
         
-        experiment_name = f"macro_nutrient_prediction_{self.env}"
+        experiment_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_name = f"macro_nutrient_prediction_{self.env}_{experiment_timestamp}"
         try:
             mlflow.create_experiment(experiment_name)
         except Exception as e:
@@ -40,12 +41,12 @@ class MLFlowExperimentTracker:
         y_train: pd.DataFrame, 
         param_grid: dict
     ):
-            logger.info("Training model with grid search...")
-            best_params = self.model._hyperparameter_tuning(X_train, y_train, param_grid)
-            mlflow.log_params(best_params)
-            logger.info(f"Best parameters: {best_params}")
-            
-            return best_params
+        logger.info("Training model with grid search...")
+        best_params = self.model._hyperparameter_tuning(X_train, y_train, param_grid)
+        mlflow.log_params(best_params)
+        logger.info(f"Best parameters: {best_params}")
+        
+        return best_params
             
             
     def _track_train_macro_model(
@@ -86,39 +87,38 @@ class MLFlowExperimentTracker:
         y_train: pd.DataFrame,
         X_test: pd.DataFrame,
         y_test: pd.DataFrame,
+        param_grid: dict
     ):
-        for macro in self.macros:  
-            model_name = macro.lower().replace("target_", "")
-            logger.info(f"\nTraining model for {macro}")
-            
-            if mlflow.active_run():
-                mlflow.end_run()
-                
-            with mlflow.start_run(run_name=model_name) as run:
-                logger.info(f"MLflow run ID: {run.info.run_id}")
-                logger.info(f"Training {macro} model")
-                
-                # Set tags
-                mlflow.set_tag("macro_type", macro)
-                mlflow.set_tag("model_name", model_name)
-                mlflow.set_tag("environment", self.env)
-                
-                best_params = self._track_hyperparameter_tuning(
-                    X_train,
-                    y_train,
-                    self.model.param_grid
-                )
-                
-                self._track_train_macro_model(
-                    X_train=X_train,
-                    y_train=y_train,
-                    X_test=X_test,
-                    y_test=y_test,
-                    macro=macro,
-                    model_params=best_params,
-                    model_name=model_name
-                )
-                logger.info(f"Run ID: {run.info.run_id}")
+        with mlflow.start_run(run_name="macro_nutrient_prediction"):
+            for macro in self.macros:  
+                model_name = macro.lower().replace("target_", "")
+                logger.info(f"\nTraining model for {macro}")
+                    
+                with mlflow.start_run(run_name=model_name, nested=True) as run:
+                    logger.info(f"MLflow run ID: {run.info.run_id}")
+                    logger.info(f"Training {macro} model")
+                    
+                    # Set tags
+                    mlflow.set_tag("macro_type", macro)
+                    mlflow.set_tag("model_name", model_name)
+                    mlflow.set_tag("environment", self.env)
+                                    
+                    best_params = self._track_hyperparameter_tuning(
+                        X_train,
+                        y_train,
+                        param_grid
+                    )
+                    
+                    self._track_train_macro_model(
+                        X_train=X_train,
+                        y_train=y_train,
+                        X_test=X_test,
+                        y_test=y_test,
+                        macro=macro,
+                        model_params=best_params,
+                        model_name=model_name
+                    )
+                    logger.info(f"Run ID: {run.info.run_id}")
 
-        mlflow.end_run()
+        logger.info("All runs completed. Closing MLflow run...")
             

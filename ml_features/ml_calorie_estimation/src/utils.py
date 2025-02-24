@@ -12,6 +12,22 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
     
+def replace_env_vars(config_dict: dict) -> dict:
+    """
+    Recursively replace environment variable placeholders in the config dictionary.
+    Example:
+        {"aws": {"sagemaker": {"role": "${SAGEMAKER_ROLE_ARN}"}}}
+        will be replaced with:
+        {"aws": {"sagemaker": {"role": "arn:aws:iam::123456789:role/MySageMakerRole"}}}
+    """
+    for key, value in config_dict.items():
+        if isinstance(value, dict):
+            config_dict[key] = replace_env_vars(value)  # Recursively replace nested dictionaries
+        elif isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+            env_var = value[2:-1]  # Extract variable name (e.g., SAGEMAKER_ROLE_ARN)
+            config_dict[key] = os.getenv(env_var, value)  # Replace with env var value or keep default
+    return config_dict
+
 def load_config(env: Literal["local", "production"] = "local") -> Config:
     """Load configuration based on environment
 
@@ -35,6 +51,8 @@ def load_config(env: Literal["local", "production"] = "local") -> Config:
     except FileNotFoundError:
         logger.error(f"Configuration file not found: {config_path}")
         raise
+    
+    config_dict = replace_env_vars(config_dict)
 
     # Load API credentials
     api_id = os.getenv("EDAMAM_API_ID")

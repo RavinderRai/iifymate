@@ -52,6 +52,11 @@ class CollectorConfig(BaseModel):
 class SageMakerConfig(BaseModel):
     instance_type: str
     training_job_timeout: int
+    role: str
+    output_path: str
+    max_retries: int
+    max_parallel_jobs: int
+
     
 class AWSConfig(BaseModel):
     region: str
