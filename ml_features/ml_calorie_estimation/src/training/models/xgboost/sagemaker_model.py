@@ -35,6 +35,8 @@ class SageMakerModel(ModelBase):
         Trains the final XGBoost model on SageMaker using the best hyperparameters.
         """
         train_s3_uri, _ = get_feature_paths(self.env)
+        
+        model_params["macro"] = macro
 
         xgb_estimator = XGBoost(
             entry_point="train.py",
@@ -45,12 +47,11 @@ class SageMakerModel(ModelBase):
             instance_type=self.instance_type,
             output_path=self.output_path,
             sagemaker_session=self.sagemaker_session,
-            hyperparameters={**model_params, "objective": "reg:squarederror", "num_round": 100, "macro": macro}
+            hyperparameters=model_params
         )
 
         logger.info(f"Training final model for {macro} using data from {train_s3_uri}")
         xgb_estimator.fit({'train': TrainingInput(s3_data=train_s3_uri, content_type="csv")})
-        xgb_estimator.wait()
         return xgb_estimator
 
     def _evaluate_macro_model(self, model, X_test, y_test, macro):

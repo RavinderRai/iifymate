@@ -55,8 +55,8 @@ def run_training(env:str = "local"):
     elif env == "production":        
         model_instance = SageMakerModel(env)
         xgb_model = model_instance._train_macro_model(X_train, y_train, macros[0], {"learning_rate": 0.01, "max_depth": 3, "n_estimators": 100})
-        
-        metrics = model_instance._evaluate_macro_model(X_train, y_train, macros[0], param_grid)
+
+        #metrics = model_instance._evaluate_macro_model(X_train, y_train, macros[0], param_grid)
         
         
         

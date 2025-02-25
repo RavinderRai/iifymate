@@ -48,7 +48,7 @@ class MLFeatureStore:
         """Save features to S3"""
         try:
             s3_path = f"s3://{self.bucket_name}/{self.feature_store_prefix}{filename}"
-            feature_df.to_parquet(s3_path)
+            feature_df.to_csv(s3_path, index=False)
             logger.info(f"Saved features to {s3_path}")
         except Exception as e:
             logger.error(f"Failed to save features to S3: {e}")
@@ -88,6 +88,6 @@ class MLFeatureStore:
     def save_transformer(self, transformer, filename: str):
         """Save transformer based on environment"""
         if self.env == "local":
-            self._save_transformer_locally(transformer, filename)
+            self._save_transformers_locally(transformer, filename)
         else:
             self._save_transformer_to_s3(transformer, filename)

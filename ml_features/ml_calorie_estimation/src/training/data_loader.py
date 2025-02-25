@@ -18,8 +18,8 @@ def get_feature_paths(env: str = "local") -> Tuple[str, str]:
     else:
         bucket = config.aws.s3_bucket
         prefix = config.aws.feature_store_prefix
-        feature_path = f"s3://{bucket}/{prefix}recipe_features.parquet"
-        test_path = f"s3://{bucket}/{prefix}test_features.parquet"
+        feature_path = f"s3://{bucket}/{prefix}recipe_features.csv"
+        test_path = f"s3://{bucket}/{prefix}test_features.csv"
     
     return feature_path, test_path
 
@@ -41,10 +41,10 @@ def load_training_data(env: str = "local") -> Tuple[pd.DataFrame, pd.DataFrame, 
     try:
         # Load features and targets
         logger.info(f"Reading training features from {feature_path}")
-        feature_df = pd.read_parquet(feature_path)
+        feature_df = pd.read_csv(feature_path)
         
         logger.info(f"Reading test features from {test_path}")
-        test_df = pd.read_parquet(test_path)
+        test_df = pd.read_csv(test_path)
         
         # Separate features and targets
         feature_cols = [col for col in feature_df.columns if col.startswith('component_')]

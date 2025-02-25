@@ -4,6 +4,7 @@ import logging
 
 from ml_features.ml_calorie_estimation.src.utils import create_db_config, load_config
 from ml_features.ml_calorie_estimation.src.databases.manager import DatabaseManager
+from ml_features.ml_calorie_estimation.src.training.data_loader import clean_training_testing_data
 from ml_features.ml_calorie_estimation.src.feature_engineering.xgboost_transformations import xgboost_transformations
 from ml_features.ml_calorie_estimation.src.databases.models.clean_data import CleanRecipe
 from ml_features.ml_calorie_estimation.src.feature_engineering.feature_store import MLFeatureStore
@@ -29,20 +30,22 @@ def run_feature_transformations(env: str = "local"):
     # Perform feature transformations
     logger.info("Performing feature transformations for XGBoost model.")
     X_train, X_test, y_train, y_test, tfidf_fitted, svd_fitted = xgboost_transformations(df)
+    
+    X_train, y_train = clean_training_testing_data(X_train, y_train, ['Fat', 'Carbohydrates_net', 'Protein'])
+    X_test, y_test = clean_training_testing_data(X_test, y_test, ['Fat', 'Carbohydrates_net', 'Protein'])
         
     feature_df = X_train.copy()
     feature_df['recipe_id'] = feature_df.index
-    feature_df['timestamp'] = pd.Timestamp.now()
         
     # Add target variables
     for col in y_train.columns:
         feature_df[f'target_{col}'] = y_train[col]
     logger.info("Feature transformation of X data completed with shape: {}".format(feature_df.shape))
         
+        
     # Also save test data separately
     test_df = X_test.copy()
     test_df['recipe_id'] = test_df.index
-    test_df['timestamp'] = pd.Timestamp.now()
     
     for col in y_test.columns:
         test_df[f'target_{col}'] = y_test[col]
@@ -54,8 +57,8 @@ def run_feature_transformations(env: str = "local"):
     logger.info("Saving features and transformers to feature store.")    
     feature_store.save_transformer(tfidf_fitted, "tfidf_transformer.joblib")
     feature_store.save_transformer(svd_fitted, "svd_transformer.joblib")
-    feature_store.save_features(feature_df, "recipe_features.parquet")
-    feature_store.save_features(test_df, "test_features.parquet")
+    feature_store.save_features(feature_df, "recipe_features.csv")
+    feature_store.save_features(test_df, "test_features.csv")
     
     
 if __name__ == "__main__":
