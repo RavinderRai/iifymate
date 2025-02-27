@@ -28,14 +28,13 @@ class SageMakerModel(ModelBase):
         self.instance_count = 1  # Keep at 1 for free tier
         self.output_path = aws_config.sagemaker.output_path
         self.sagemaker_session = sagemaker.Session()
+        self.train_s3_uri, self.test_s3_uri = get_feature_paths(self.env)
         
 
-    def _train_macro_model(self, X_train, y_train, macro, model_params):
+    def _train_macro_model(self, macro, model_params, X_train=None, y_train=None):
         """
         Trains the final XGBoost model on SageMaker using the best hyperparameters.
         """
-        train_s3_uri, _ = get_feature_paths(self.env)
-        
         model_params["macro"] = macro
 
         xgb_estimator = XGBoost(
@@ -50,25 +49,17 @@ class SageMakerModel(ModelBase):
             hyperparameters=model_params
         )
 
-        logger.info(f"Training final model for {macro} using data from {train_s3_uri}")
-        xgb_estimator.fit({'train': TrainingInput(s3_data=train_s3_uri, content_type="csv")})
+        logger.info(f"Training final model for {macro} using data from {self.train_s3_uri}")
+        xgb_estimator.fit({'train': TrainingInput(s3_data=self.train_s3_uri, content_type="csv")})
+        self.latest_training_job = xgb_estimator.latest_training_job
+        
         return xgb_estimator
 
-    def _evaluate_macro_model(self, model, X_test, y_test, macro):
-        """
-        Evaluates the SageMaker-trained model by deploying a temporary endpoint.
-        """
-        predictor = model.deploy(initial_instance_count=1, instance_type=self.instance_type, endpoint_name=f"{macro}-endpoint")
-        predictions = predictor.predict(X_test.values)
-
-        self.sagemaker_session.delete_endpoint(predictor.endpoint)
-        return {"r2": r2_score(y_test[macro], predictions), "mse": mean_squared_error(y_test[macro], predictions)}
-    
-    def _hyperparameter_tuning(self, X_train, y_train, macro, param_grid):
+    def _hyperparameter_tuning(self, macro, param_grid, max_jobs=2, max_parallel_jobs=1, X_train=None, y_train=None):
         """
         Uses SageMaker HyperparameterTuner to find the best hyperparameters.
         """
-        train_s3_uri, _ = get_feature_paths(self.env)  # Use pre-stored S3 path
+        logger.info(f"Starting hyperparameter tuning with parameter grid: {param_grid}")
         
         xgb_estimator = XGBoost(
             entry_point="train.py",
@@ -79,35 +70,32 @@ class SageMakerModel(ModelBase):
             instance_type=self.instance_type,
             output_path=self.output_path,
             sagemaker_session=self.sagemaker_session,
-            hyperparameters={"objective": "reg:squarederror", "num_round": 100, "macro": macro}
+            hyperparameters={"macro": macro}
         )
 
-        # Convert GridSearch param_grid to SageMaker format
-        hyperparameter_ranges = {}
-        for param, values in param_grid.items():
-            if all(isinstance(v, int) for v in values):
-                hyperparameter_ranges[param] = IntegerParameter(min(values), max(values))
-            elif all(isinstance(v, float) for v in values):
-                hyperparameter_ranges[param] = ContinuousParameter(min(values), max(values))
-            else:
-                hyperparameter_ranges[param] = CategoricalParameter(values)
-
+        hyperparameter_ranges = {
+            key: (IntegerParameter(*value) if isinstance(value[0], int) else ContinuousParameter(*value))
+            for key, value in param_grid.items()
+        }
+        
+        # Define Tuner
         tuner = HyperparameterTuner(
             estimator=xgb_estimator,
             objective_metric_name="validation:rmse",
+            objective_type="Minimize",
             hyperparameter_ranges=hyperparameter_ranges,
-            max_jobs=10,
-            max_parallel_jobs=1,  # Free tier compatible
-            objective_type="Minimize"
+            metric_definitions=[{"Name": "validation:rmse", "Regex": "validation:rmse=([0-9\\.]+)"}],
+            max_jobs=max_jobs,
+            max_parallel_jobs=max_parallel_jobs
         )
-
-        logger.info(f"Starting hyperparameter tuning for {macro} using data from {train_s3_uri}")
-        tuner.fit({'train': TrainingInput(s3_data=train_s3_uri, content_type="csv")})
-        tuner.wait()
-
-        best_params = tuner.best_estimator().hyperparameters()
-        logger.info(f"Best parameters for {macro}: {best_params}")
-        return best_params
+        
+        tuner.fit({
+            'train': TrainingInput(s3_data=self.train_s3_uri, content_type="csv"),
+            'validation': TrainingInput(s3_data=self.test_s3_uri, content_type="csv")
+        })
+        
+        self.latest_tuning_job = tuner
+        return tuner
     
-    def _evaluate_macro_model(self, model, X_test, y_test, macro):
+    def _evaluate_macro_model(self, model, macro, X_test, y_test):
         pass

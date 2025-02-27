@@ -1,4 +1,5 @@
 import os
+from sklearn.metrics import mean_squared_error
 import numpy as np
 import argparse
 import pandas as pd
@@ -9,7 +10,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-INPUT_DIR = "/opt/ml/input/data/train"
+INPUT_TRAIN_DIR = "/opt/ml/input/data/train"
+INPUT_VALID_DIR = "/opt/ml/input/data/validation"
 MODEL_DIR = "/opt/ml/model"
 
 def load_data(INPUT_DIR, macro):
@@ -67,12 +69,22 @@ def train_model(X, y, hyperparameters):
 
     return model
 
+def evaluate_model(model, X_test, y_test):
+    """Evaluate the trained model and log the metric for SageMaker"""
+    y_pred = model.predict(X_test)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    
+    # ✅ SageMaker expects the metric in this exact format
+    logger.info(f"validation:rmse={rmse}")  # ✅ Matches the regex SageMaker expects
+
+    return rmse
+
 def main():
     # Parse SageMaker hyperparameters
     parser = argparse.ArgumentParser()
-    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--eta", type=float, default=0.1)
     parser.add_argument("--max_depth", type=int, default=5)
-    parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--num_round", type=int, default=100)
     parser.add_argument("--macro", type=str, required=True)
     
     args = parser.parse_args()
@@ -80,15 +92,20 @@ def main():
     macro = args.macro
 
     # Load data
-    X_train, y_train = load_data(INPUT_DIR=INPUT_DIR, macro=macro)
+    X_train, y_train = load_data(INPUT_DIR=INPUT_TRAIN_DIR, macro=macro)
+    X_test, y_test = load_data(INPUT_DIR=INPUT_VALID_DIR, macro=macro)
 
     # Train model
     model = train_model(X_train, y_train, hyperparameters)
+    
+    rmse = evaluate_model(model, X_test, y_test)
 
     # Save model (SageMaker expects it in `/opt/ml/model/`)
     model_path = os.path.join(MODEL_DIR, f"xgboost-{macro}-model.pkl")
     joblib.dump(model, model_path)
     logger.info(f"Model saved to {model_path}")
+    
+    return rmse
 
 if __name__ == "__main__":
     main()

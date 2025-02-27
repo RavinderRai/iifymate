@@ -4,6 +4,8 @@ from pathlib import Path
 import logging
 import datetime
 import pandas as pd
+from sqlalchemy import create_engine
+from ml_features.ml_calorie_estimation.src.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,8 +21,11 @@ class MLFlowExperimentTracker:
             os.makedirs(mlflow_dir, exist_ok=True)
             mlflow_tracking_uri = f"file://{mlflow_dir}"
         else:
-            # Use S3 for MLflow tracking
-            mlflow_tracking_uri = f"s3://{aws_config.s3_bucket}/mlflow/"
+            config = load_config(env)
+            db_config = config.database
+            mlflow_tracking_uri = db_config.connection_string
+            
+            self._initialize_mlflow_db(mlflow_tracking_uri)
             
         
         mlflow.set_tracking_uri(mlflow_tracking_uri)
@@ -34,6 +39,16 @@ class MLFlowExperimentTracker:
             raise
         
         mlflow.set_experiment(experiment_name)
+        
+    def _initialize_mlflow_db(self, db_uri):
+        logger.info("Checking if MLFlow database schema exists...")
+        engine = create_engine(db_uri)
+        with engine.connect() as conn:
+            conn.execute("COMMIT")
+        engine.dispose()
+        
+        # Run MLFlow DB Migration
+ 
         
     def _track_hyperparameter_tuning(
         self, 
@@ -102,23 +117,48 @@ class MLFlowExperimentTracker:
                     mlflow.set_tag("macro_type", macro)
                     mlflow.set_tag("model_name", model_name)
                     mlflow.set_tag("environment", self.env)
-                                    
-                    best_params = self._track_hyperparameter_tuning(
-                        X_train,
-                        y_train,
-                        param_grid
-                    )
                     
-                    self._track_train_macro_model(
-                        X_train=X_train,
-                        y_train=y_train,
-                        X_test=X_test,
-                        y_test=y_test,
-                        macro=macro,
-                        model_params=best_params,
-                        model_name=model_name
-                    )
+                    if self.env == "local":
+                                    
+                        best_params = self._track_hyperparameter_tuning(
+                            X_train,
+                            y_train,
+                            param_grid
+                        )
+                        
+                        self._track_train_macro_model(
+                            X_train=X_train,
+                            y_train=y_train,
+                            X_test=X_test,
+                            y_test=y_test,
+                            macro=macro,
+                            model_params=best_params,
+                            model_name=model_name
+                        )
+                        
+                    elif self.env == "production":
+                        tuner = self.model_hyperparameter_tuning(macro, param_grid)
+                        self._track_sagemaker_training(macro, tuner)
+                        
                     logger.info(f"Run ID: {run.info.run_id}")
 
         logger.info("All runs completed. Closing MLflow run...")
+        
+        
+    def _track_sagemaker_training(self, macro, tuner=None):
+        with mlflow.start_run(run_name=f"{macro}_sagemaker_training"):
+            logger.info(f"Tracking SageMaker job for {macro}")
             
+            job_name = tuner.latest_tuning_job.name if tuner else self.model.latest_training_job.name
+            
+            
+            if tuner:
+                best_job = tuner.best_training_job()
+                best_params = tuner.best_hyperparameters()
+                
+                mlflow.log_params(best_params)
+                
+                xgb_model = best_job.model
+                                
+                
+            logger.info(f"Finished tracking SageMaker job for {macro}")

@@ -28,8 +28,8 @@ def run_training(env:str = "local"):
     
     param_grid = {
         'learning_rate': [0.01, 0.01],
-        #'max_depth': [3, 5],
-        #'n_estimators': [100]
+        'max_depth': [3, 5],
+        'n_estimators': [100]
     }
     X_train, X_test, y_train, y_test = load_training_data(env)
     
@@ -54,10 +54,20 @@ def run_training(env:str = "local"):
         
     elif env == "production":        
         model_instance = SageMakerModel(env)
-        xgb_model = model_instance._train_macro_model(X_train, y_train, macros[0], {"learning_rate": 0.01, "max_depth": 3, "n_estimators": 100})
+        #xgb_model = model_instance._train_macro_model(X_train, y_train, macros[0], {"learning_rate": 0.01, "max_depth": 3, "n_estimators": 100})
 
-        #metrics = model_instance._evaluate_macro_model(X_train, y_train, macros[0], param_grid)
+        # SageMaker Tuning expects ranges as tuples, not lists of specific values
+        param_grid = {
+            'eta': (0.01, 0.3),  # SageMaker's version of learning_rate
+            'max_depth': (3, 5),
+            'num_round': (50, 150)  # SageMaker's version of n_estimators
+        }
         
+        experiment_tracker = MLFlowExperimentTracker(model_instance, macros, env)
+
+        experiment_tracker.start_mlflow_run(env, param_grid)
+
+        #tuner = model_instance._hyperparameter_tuning(macros[0], param_grid)
         
         
 
