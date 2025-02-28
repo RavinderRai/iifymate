@@ -1,10 +1,14 @@
 import os
+import tarfile
+import boto3
 import mlflow
 from pathlib import Path
 import logging
 import datetime
+import subprocess
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from ml_features.ml_calorie_estimation.src.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
@@ -21,10 +25,15 @@ class MLFlowExperimentTracker:
             os.makedirs(mlflow_dir, exist_ok=True)
             mlflow_tracking_uri = f"file://{mlflow_dir}"
         else:
-            config = load_config(env)
-            db_config = config.database
-            mlflow_tracking_uri = db_config.connection_string
+            #config = load_config(env)
+            #db_config = config.database
             
+            mlflow_tracking_uri = "postgresql://iifymateadmin:Quantum4ier!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb"
+            
+            # Use PostgreSQL-based MLFlow tracking
+            #mlflow_tracking_uri = db_config.connection_string
+            
+            # Ensure MLFlow schema exists
             self._initialize_mlflow_db(mlflow_tracking_uri)
             
         
@@ -43,12 +52,43 @@ class MLFlowExperimentTracker:
     def _initialize_mlflow_db(self, db_uri):
         logger.info("Checking if MLFlow database schema exists...")
         engine = create_engine(db_uri)
-        with engine.connect() as conn:
-            conn.execute("COMMIT")
-        engine.dispose()
+
+        try:
+            with engine.connect() as conn:
+                # ✅ Check if the `experiment` table exists (MLflow schema check)
+                result = conn.execute(
+                    text("SELECT 1 FROM information_schema.tables WHERE table_name = 'experiment'")
+                ).fetchone()
+
+                if result:
+                    logger.info("MLflow database schema already exists. No upgrade needed.")
+                else:
+                    logger.info("MLflow schema not found. Running `mlflow db upgrade`...")
+                    self._run_mlflow_db_upgrade(db_uri)
         
-        # Run MLFlow DB Migration
- 
+        except (OperationalError, ProgrammingError) as e:
+            logger.error(f"Database connection error: {e}")
+            logger.info("Attempting to initialize MLflow schema with `mlflow db upgrade`...")
+            self._run_mlflow_db_upgrade(db_uri)
+            
+        finally:
+            engine.dispose()
+            logger.info("MLflow database schema check complete.")
+        
+    def _run_mlflow_db_upgrade(self, db_uri):
+        """Run `mlflow db upgrade` command programatically"""
+        try:
+            logger.info("Running `mlflow db upgrade` command...")
+            result = subprocess.run(
+                ["mlflow", "db", "upgrade", db_uri],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            logger.info(f"MLflow DB Upgrade Output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error running mlflow db upgrade: {e}")
+            raise
         
     def _track_hyperparameter_tuning(
         self, 
@@ -96,6 +136,62 @@ class MLFlowExperimentTracker:
             input_example=input_example
         )
         
+    def _track_sagemaker_training(self, model_name, tuner=None):
+        logger.info(f"Tracking SageMaker job for {model_name}")
+
+        sm_client = boto3.client("sagemaker")
+
+        # ✅ Get the best training job
+        best_training_job = tuner.best_training_job()
+        training_job_details = sm_client.describe_training_job(TrainingJobName=best_training_job)
+
+        # ✅ Log hyperparameters
+        best_params = training_job_details["HyperParameters"]
+        mlflow.log_params(best_params)
+
+        # ✅ Log best model's metrics
+        training_metrics = training_job_details.get("FinalMetricDataList", [])
+        for metric in training_metrics:
+            mlflow.log_metric(metric["MetricName"], metric["Value"])
+
+        # ✅ Find the best model’s S3 location
+        best_model_s3_uri = training_job_details["ModelArtifacts"]["S3ModelArtifacts"]
+        logger.info(f"Best model URI: {best_model_s3_uri}")
+
+        # ✅ Ensure local directories exist
+        local_model_path = f"/tmp/{model_name}_best_model.tar.gz"
+
+        # ✅ Download the model from S3
+        s3_bucket, s3_key = best_model_s3_uri.replace("s3://", "").split("/", 1)
+        s3 = boto3.client("s3")
+        s3.download_file(s3_bucket, s3_key, local_model_path)
+
+        # ✅ Extract the model
+        with tarfile.open(local_model_path, "r:gz") as tar:
+            tar.extractall("/tmp")
+
+        # ✅ Register the best model in MLflow
+        mlflow.register_model(
+            model_uri=best_model_s3_uri,
+            name=f"xgboost_{model_name}"
+        )
+
+        logger.info(f"Registered best model for {model_name} in MLflow.")
+        
+        return best_params
+    
+    def _cleanup_s3_models(self, s3_bucket, keep_model):
+        """Deletes all unnecessary models from the S3 bucket except the best one."""
+        
+        s3 = boto3.client("s3")
+        objects = s3.list_objects_v2(Bucket=s3_bucket, Prefix="models/")
+
+        if "Contents" in objects:
+            for obj in objects["Contents"]:
+                if obj["Key"] != keep_model:
+                    logger.info(f"Deleting unused model: {obj['Key']}")
+                    s3.delete_object(Bucket=s3_bucket, Key=obj["Key"])
+        
     def start_mlflow_run(
         self,
         X_train: pd.DataFrame, 
@@ -137,28 +233,23 @@ class MLFlowExperimentTracker:
                         )
                         
                     elif self.env == "production":
-                        tuner = self.model_hyperparameter_tuning(macro, param_grid)
-                        self._track_sagemaker_training(macro, tuner)
+                        tuner = self.model._hyperparameter_tuning(
+                            macro, 
+                            param_grid
+                        )
+                        
+                        self._track_sagemaker_training(
+                            macro, 
+                            tuner
+                        )
                         
                     logger.info(f"Run ID: {run.info.run_id}")
 
         logger.info("All runs completed. Closing MLflow run...")
         
-        
-    def _track_sagemaker_training(self, macro, tuner=None):
-        with mlflow.start_run(run_name=f"{macro}_sagemaker_training"):
-            logger.info(f"Tracking SageMaker job for {macro}")
-            
-            job_name = tuner.latest_tuning_job.name if tuner else self.model.latest_training_job.name
-            
-            
-            if tuner:
-                best_job = tuner.best_training_job()
-                best_params = tuner.best_hyperparameters()
-                
-                mlflow.log_params(best_params)
-                
-                xgb_model = best_job.model
-                                
-                
-            logger.info(f"Finished tracking SageMaker job for {macro}")
+
+# Run this to start mlflow server
+# mlflow server \
+# --backend-store-uri postgresql://iifymateadmin:Quantum4ier\!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb \
+# default --default-artifact-root s3://iifymate-ml-data/models/ \
+# --host 0.0.0.0 --port 5000

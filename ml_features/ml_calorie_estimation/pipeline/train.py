@@ -65,7 +65,7 @@ def run_training(env:str = "local"):
         
         experiment_tracker = MLFlowExperimentTracker(model_instance, macros, env)
 
-        experiment_tracker.start_mlflow_run(env, param_grid)
+        experiment_tracker.start_mlflow_run(None, None, None, None, param_grid)
 
         #tuner = model_instance._hyperparameter_tuning(macros[0], param_grid)
         
