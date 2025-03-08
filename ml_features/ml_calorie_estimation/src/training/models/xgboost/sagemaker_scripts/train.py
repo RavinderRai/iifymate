@@ -1,11 +1,12 @@
 import os
-from sklearn.metrics import mean_squared_error
+import json
 import numpy as np
 import argparse
 import pandas as pd
 import xgboost as xgb
 import joblib
 import logging
+from sklearn.metrics import mean_squared_error, r2_score
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,6 +14,11 @@ logger = logging.getLogger(__name__)
 INPUT_TRAIN_DIR = "/opt/ml/input/data/train"
 INPUT_VALID_DIR = "/opt/ml/input/data/validation"
 MODEL_DIR = "/opt/ml/model"
+
+def custom_metric(y_true, y_pred):
+    """Mock custom metric: r2_score + 1 (replace later with a real metric)."""
+    custom_evaluation_metric = r2_score(y_true, y_pred) + 1
+    return custom_evaluation_metric
 
 def load_data(INPUT_DIR, macro):
     """Load training data from SageMaker input directory"""
@@ -38,9 +44,9 @@ def load_data(INPUT_DIR, macro):
     # Try reading the file with UTF-8, fallback to ISO-8859-1 if needed
     try:
         df = pd.read_csv(data_path, encoding="utf-8")
-        logger.info("✅ Successfully read CSV with UTF-8 encoding.")
+        logger.info("Successfully read CSV with UTF-8 encoding.")
     except UnicodeDecodeError:
-        logger.warning("⚠️ UTF-8 decoding failed. Retrying with ISO-8859-1 encoding.")
+        logger.warning("UTF-8 decoding failed. Retrying with ISO-8859-1 encoding.")
         df = pd.read_csv(data_path, encoding="ISO-8859-1")
 
     # Print basic info about dataset
@@ -49,12 +55,12 @@ def load_data(INPUT_DIR, macro):
     logger.info(f"First 5 rows:\n{df.head()}")
 
     if macro not in df.columns:
-        raise ValueError(f"🚨 Target column '{macro}' not found in dataset! Available columns: {df.columns}")
+        raise ValueError(f"Target column '{macro}' not found in dataset! Available columns: {df.columns}")
 
     X = df.drop(columns=[macro])  # Drop the dynamic macro target column
     y = df[macro]
 
-    logger.info(f"✅ Loaded training data with shape {df.shape} for target column: {macro}")
+    logger.info(f"Loaded training data with shape {df.shape} for target column: {macro}")
     return X, y
 
 def train_model(X, y, hyperparameters):
@@ -72,12 +78,26 @@ def train_model(X, y, hyperparameters):
 def evaluate_model(model, X_test, y_test):
     """Evaluate the trained model and log the metric for SageMaker"""
     y_pred = model.predict(X_test)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    
-    # ✅ SageMaker expects the metric in this exact format
-    logger.info(f"validation:rmse={rmse}")  # ✅ Matches the regex SageMaker expects
 
-    return rmse
+    r2 = r2_score(y_test, y_pred)
+    custom_value = custom_metric(y_test, y_pred)
+
+    # 🚨 Handle potential NaN issue
+    if np.isnan(r2):
+        logger.warning("⚠️ r2_score is NaN! Setting to 0 to prevent SageMaker errors.")
+        r2 = 0  # Set to a valid default to prevent failure
+        custom_value = 1  # Since r2 + 1 would also be NaN
+
+    # ✅ SageMaker expected format
+    logger.info(f"validation:r2={r2}")  
+    logger.info(f"custom_metric:r2_plus_1={custom_value}")
+
+    # ✅ Save metrics in case SageMaker fails to capture them
+    evaluation_output_path = os.path.join(MODEL_DIR, "evaluation_output.txt")
+    with open(evaluation_output_path, "w") as f:
+        json.dump({"validation:r2": r2, "custom_metric:r2_plus_1": custom_value}, f)
+
+    return r2, custom_value
 
 def main():
     # Parse SageMaker hyperparameters
@@ -98,14 +118,15 @@ def main():
     # Train model
     model = train_model(X_train, y_train, hyperparameters)
     
-    rmse = evaluate_model(model, X_test, y_test)
+    r2, custom_metric_value = evaluate_model(model, X_test, y_test)
+    print(r2, custom_metric_value)
 
     # Save model (SageMaker expects it in `/opt/ml/model/`)
     model_path = os.path.join(MODEL_DIR, f"xgboost-{macro}-model.pkl")
     joblib.dump(model, model_path)
     logger.info(f"Model saved to {model_path}")
     
-    return rmse
+    return r2, custom_metric_value
 
 if __name__ == "__main__":
     main()

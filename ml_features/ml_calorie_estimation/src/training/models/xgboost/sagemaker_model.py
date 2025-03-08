@@ -81,10 +81,14 @@ class SageMakerModel(ModelBase):
         # Define Tuner
         tuner = HyperparameterTuner(
             estimator=xgb_estimator,
-            objective_metric_name="validation:rmse",
-            objective_type="Minimize",
+            objective_metric_name="validation:r2",
+            objective_type="Maximize",
             hyperparameter_ranges=hyperparameter_ranges,
-            metric_definitions=[{"Name": "validation:rmse", "Regex": "validation:rmse=([0-9\\.]+)"}],
+            metric_definitions=[
+                #{"Name": "validation:rmse", "Regex": "validation:rmse=([0-9\\.]+)"},
+                {"Name": "validation:r2", "Regex": "validation:r2=([0-9\\.]+)"},
+                {"Name": "custom_metric:r2_plus_1", "Regex": "custom_metric:r2_plus_1=([0-9\\.]+)"}
+            ],
             max_jobs=max_jobs,
             max_parallel_jobs=max_parallel_jobs
         )

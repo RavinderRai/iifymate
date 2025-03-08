@@ -141,36 +141,36 @@ class MLFlowExperimentTracker:
 
         sm_client = boto3.client("sagemaker")
 
-        # ✅ Get the best training job
+        # Get the best training job
         best_training_job = tuner.best_training_job()
         training_job_details = sm_client.describe_training_job(TrainingJobName=best_training_job)
 
-        # ✅ Log hyperparameters
+        # Log hyperparameters
         best_params = training_job_details["HyperParameters"]
         mlflow.log_params(best_params)
 
-        # ✅ Log best model's metrics
+        # Log best model's metrics
         training_metrics = training_job_details.get("FinalMetricDataList", [])
+        logger.info(f"SageMaker Training Metrics: {training_metrics}")
+        if not training_metrics:
+            logger.warning(f"No training metrics found for {model_name}")
+        
+        seen_metrics = set()
         for metric in training_metrics:
-            mlflow.log_metric(metric["MetricName"], metric["Value"])
+            metric_name = metric["MetricName"]
+            metric_value = metric["Value"]
+            
+            # ✅ Log metrics only once
+            if metric_name not in seen_metrics:
+                mlflow.log_metric(metric_name, metric_value)
+                logger.info(f"Logged metric: {metric_name}={metric_value}")
+                seen_metrics.add(metric_name)
 
-        # ✅ Find the best model’s S3 location
-        best_model_s3_uri = training_job_details["ModelArtifacts"]["S3ModelArtifacts"]
-        logger.info(f"Best model URI: {best_model_s3_uri}")
+            # Find the best model’s S3 location
+            best_model_s3_uri = training_job_details["ModelArtifacts"]["S3ModelArtifacts"]
+            logger.info(f"Best model URI: {best_model_s3_uri}")
 
-        # ✅ Ensure local directories exist
-        local_model_path = f"/tmp/{model_name}_best_model.tar.gz"
-
-        # ✅ Download the model from S3
-        s3_bucket, s3_key = best_model_s3_uri.replace("s3://", "").split("/", 1)
-        s3 = boto3.client("s3")
-        s3.download_file(s3_bucket, s3_key, local_model_path)
-
-        # ✅ Extract the model
-        with tarfile.open(local_model_path, "r:gz") as tar:
-            tar.extractall("/tmp")
-
-        # ✅ Register the best model in MLflow
+        # Register the best model in MLflow
         mlflow.register_model(
             model_uri=best_model_s3_uri,
             name=f"xgboost_{model_name}"
@@ -200,19 +200,21 @@ class MLFlowExperimentTracker:
         y_test: pd.DataFrame,
         param_grid: dict
     ):
-        with mlflow.start_run(run_name="macro_nutrient_prediction"):
+        with mlflow.start_run(run_name="macro_nutrient_prediction") as parent_run:
+            parent_run_id = parent_run.info.run_id
+            
             for macro in self.macros:  
                 model_name = macro.lower().replace("target_", "")
                 logger.info(f"\nTraining model for {macro}")
                     
                 with mlflow.start_run(run_name=model_name, nested=True) as run:
-                    logger.info(f"MLflow run ID: {run.info.run_id}")
-                    logger.info(f"Training {macro} model")
-                    
-                    # Set tags
+                    mlflow.set_tag("mlflow.parentRunId", parent_run_id)                    
                     mlflow.set_tag("macro_type", macro)
                     mlflow.set_tag("model_name", model_name)
                     mlflow.set_tag("environment", self.env)
+                    
+                    logger.info(f"MLflow run ID: {run.info.run_id}")
+                    logger.info(f"Training {macro} model")
                     
                     if self.env == "local":
                                     
@@ -244,12 +246,12 @@ class MLFlowExperimentTracker:
                         )
                         
                     logger.info(f"Run ID: {run.info.run_id}")
+                
+                # Explicitly end the nested run
+                mlflow.end_run()
+                
+        # Explicitly end the main run
+        mlflow.end_run()
 
         logger.info("All runs completed. Closing MLflow run...")
         
-
-# Run this to start mlflow server
-# mlflow server \
-# --backend-store-uri postgresql://iifymateadmin:Quantum4ier\!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb \
-# default --default-artifact-root s3://iifymate-ml-data/models/ \
-# --host 0.0.0.0 --port 5000
