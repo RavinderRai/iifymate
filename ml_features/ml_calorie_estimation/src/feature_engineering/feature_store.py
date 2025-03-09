@@ -57,19 +57,19 @@ class MLFeatureStore:
     def _save_transformer_to_s3(self, transformer, filename: str):
         """Save transformers to S3"""
         try:
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                dump(transformer, temp_file)
-                
-                # Upload to S3
-                s3_key = f'{self.feature_store_prefix}transformers/{filename}'
-                self.s3_client.upload_file(
-                    temp_file.name,
-                    self.bucket_name,
-                    s3_key
-                )
-                logger.info(f"Saved transformer to s3://{self.bucket_name}/{s3_key}")
-                
-            os.unlink(temp_file.name)
+            # Create a temp file path (DO NOT open it yet)
+            temp_fd, temp_path = tempfile.mkstemp(suffix=".joblib")
+            os.close(temp_fd)  # Close file descriptor immediately
+
+            logger.info(f"Saving transformer to temp file: {temp_path}")
+
+            # Dump the transformer into the temp file
+            dump(transformer, temp_path)
+
+            # Upload to S3
+            s3_key = f"{self.feature_store_prefix}transformers/{filename}"
+            self.s3_client.upload_file(temp_path, self.bucket_name, s3_key)
+            logger.info(f"Saved transformer to s3://{self.bucket_name}/{s3_key}")
         
         except ClientError as e:
             logger.error(f"Failed to save transformers to S3: {e}")

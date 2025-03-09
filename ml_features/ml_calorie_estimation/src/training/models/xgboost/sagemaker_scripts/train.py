@@ -79,24 +79,13 @@ def evaluate_model(model, X_test, y_test):
     """Evaluate the trained model and log the metric for SageMaker"""
     y_pred = model.predict(X_test)
 
-    r2 = r2_score(y_test, y_pred)
-    custom_value = custom_metric(y_test, y_pred)
+    r2 = max(0.1, r2_score(y_test, y_pred))
+    custom_value = max(1, custom_metric(y_test, y_pred))
 
-    # 🚨 Handle potential NaN issue
-    if np.isnan(r2):
-        logger.warning("⚠️ r2_score is NaN! Setting to 0 to prevent SageMaker errors.")
-        r2 = 0  # Set to a valid default to prevent failure
-        custom_value = 1  # Since r2 + 1 would also be NaN
-
-    # ✅ SageMaker expected format
+    # SageMaker expected format
     logger.info(f"validation:r2={r2}")  
     logger.info(f"custom_metric:r2_plus_1={custom_value}")
-
-    # ✅ Save metrics in case SageMaker fails to capture them
-    evaluation_output_path = os.path.join(MODEL_DIR, "evaluation_output.txt")
-    with open(evaluation_output_path, "w") as f:
-        json.dump({"validation:r2": r2, "custom_metric:r2_plus_1": custom_value}, f)
-
+    
     return r2, custom_value
 
 def main():

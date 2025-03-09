@@ -1,6 +1,8 @@
 import os
+import joblib
 import numpy as np
 import mlflow
+import boto3
 import pandas as pd
 import logging
 from joblib import load
@@ -12,69 +14,77 @@ logger = logging.getLogger(__name__)
 
 class MacroPredictor:
     def __init__(self, env: str = "local"):
+        self.env = env
+        self.models = {}
+        self.s3_client = boto3.client("s3")
+        
+        # Map of macro types to their model names
+        self.macro_types = {
+            'fat': 'fat',
+            'carbs': 'carbohydrates_net',
+            'protein': 'protein'
+        }
+        
+        self.experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction"
         
         # Set up paths for preprocessing models
         
-        # This is for local testing
-        #current_file = Path(__file__)
-        #ml_calorie_path = current_file.parent.parent.parent  # This gets us to ml_calorie_estimation
-        
-        # This is for local testing with docker
-        ml_calorie_path = Path("/app/ml_features/ml_calorie_estimation")
-        
-        # Construct paths for the joblib files
-        feature_store_path = ml_calorie_path / "feature_store" / "feature_repo" / "data"
-        tfidf_path = feature_store_path / "tfidf_fitted.joblib"
-        svd_path = feature_store_path / "svd_fitted.joblib"
-        
-        # Load preprocessing models with error handling
-        try:
-            logger.info(f"Loading TF-IDF from {tfidf_path}")
-            self.tfidf = load(tfidf_path)
-            logger.info("TF-IDF loaded successfully")
+        if self.env == "local":
+            # This is for local testing
+            #current_file = Path(__file__)
+            #ml_calorie_path = current_file.parent.parent.parent  # This gets us to ml_calorie_estimation
             
-            logger.info(f"Loading SVD from {svd_path}")
-            self.svd = load(svd_path)
-            logger.info("SVD loaded successfully")
-        except FileNotFoundError as e:
-            logger.error(f"Could not find preprocessing model file: {e}")
-            raise
-        except Exception as e:
-            logger.error(f"Error loading preprocessing models: {e}")
-            raise
+            # This is for local testing with docker
+            ml_calorie_path = Path("/app/ml_features/ml_calorie_estimation")
+            
+            # Construct paths for the joblib files
+            feature_store_path = ml_calorie_path / "feature_store" / "feature_repo" / "data"
+            self.tfidf_path = feature_store_path / "tfidf_fitted.joblib"
+            self.svd_path = feature_store_path / "svd_fitted.joblib"
+            
+            self._load_local_transformers()
+            
+            # This is for local testing
+            #mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
+            
+            # This is for local testing with docker
+            self.mlflow_dir = ml_calorie_path / "mlruns"
+            tracking_uri = str(self.mlflow_dir.absolute())
+            logger.info(f"Setting MLflow tracking URI to: {tracking_uri}")
+            mlflow.set_tracking_uri(f"file://{tracking_uri}")
+            
+            self._load_latest_local_models()
+        else:
+            tracking_uri = "postgresql://iifymateadmin:Quantum4ier!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb"
+            mlflow.set_tracking_uri(tracking_uri)
+            
+            # Set paths for transformers and models
+            self.model_cache_dir = Path("/tmp/models")  # Cache directory inside the container
+            self.transformer_dir = Path("/tmp/transformers")
+            os.makedirs(self.model_cache_dir, exist_ok=True)
+            os.makedirs(self.transformer_dir, exist_ok=True)
+                        
+            # Download latest transformers & models
+            self._load_production_transformers()
+            self._load_latest_production_models()
+            
+        logger.info("Successfully loaded all models from MLflow")
         
-        # This is for local testing
-        #mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
-        
-        # This is for local testing with docker
-        mlflow_dir = ml_calorie_path / "mlruns"
-        tracking_uri = str(mlflow_dir.absolute())
-        logger.info(f"Setting MLflow tracking URI to: {tracking_uri}")
-        mlflow.set_tracking_uri(f"file://{tracking_uri}")
-        
+
+    
+    def _load_latest_local_models(self):
         # Get experiment name based on environment
-        experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction_prod"
-        experiment = mlflow.get_experiment_by_name(experiment_name)
+        experiment = mlflow.get_experiment_by_name(self.experiment_name)
         
         if experiment is None:
-            raise ValueError(f"Experiment '{experiment_name}' not found.")
+            raise ValueError(f"Experiment '{self.experiment_name}' not found.")
         
         logger.info("Loaded models from mlflow successfully")
         
         # Get run IDs for each model
         runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
         
-        # Initialize models dictionary
-        self.models = {}
-        
-        # Map of macro types to their model names
-        macro_types = {
-            'fat': 'fat',
-            'carbs': 'carbohydrates_net',
-            'protein': 'protein'
-        }
-        
-        for macro_type, model_name in macro_types.items():
+        for macro_type, model_name in self.macro_types.items():
             model_runs = runs[runs['tags.model_name'] == model_name]
             if len(model_runs) == 0:
                 raise ValueError(f"No runs found for '{model_name}'.")
@@ -83,7 +93,7 @@ class MacroPredictor:
             run_id = latest_run.run_id
             
             # Construct model URI using container paths
-            model_path = mlflow_dir / experiment.experiment_id / run_id / "artifacts" / model_name
+            model_path = self.mlflow_dir / experiment.experiment_id / run_id / "artifacts" / model_name
             logger.info(f"Loading {macro_type} model from path: {model_path}")
             
             try:
@@ -96,8 +106,83 @@ class MacroPredictor:
             #model_uri = f"runs:/{run_id}/{model_name}"
             #self.models[macro_type] = mlflow.xgboost.load_model(model_uri)
             #logger.info(f"Loaded {macro_type} model from run: {run_id}")
+        
+    def _load_latest_production_models(self):
+        for macro in self.macro_types:
+            logger.info(f"Fetching latest model for {macro} from MLflow Registry...")
             
-        logger.info("Successfully loaded all models from MLflow")
+            #latest_version = max(
+            #    [int(v.version) for v in mlflow.MlflowClient().get_registered_model(model_name).latest_versions]
+            #)
+            
+            #model_uri = f"models:/{model_name}/{latest_version}"
+            
+    def _load_latest_production_models(self):
+        """Fetch latest models from MLflow Registry & download from S3."""
+        macro_types = ["fat", "carbohydrates_net", "protein"]
+        
+        for macro in macro_types:
+            logger.info(f"Fetching latest model for {macro} from MLflow Registry...")
+            
+            # Get the latest model version from MLflow Registry
+            model_version = mlflow.registered_model.get_latest_versions(f"xgboost_{macro}", stages=["Production"])[0]
+            model_s3_uri = model_version.source
+
+            # Extract S3 bucket and key
+            s3_bucket, s3_key = model_s3_uri.replace("s3://", "").split("/", 1)
+            local_model_path = self.model_cache_dir / f"xgboost_{macro}.tar.gz"
+            extracted_model_path = self.model_cache_dir / f"xgboost_{macro}"
+
+            # Download model if not already cached
+            if not extracted_model_path.exists():
+                logger.info(f"Downloading {macro} model from {model_s3_uri}...")
+                self.s3_client.download_file(s3_bucket, s3_key, str(local_model_path))
+
+                # Extract model
+                os.system(f"tar -xzf {local_model_path} -C {self.model_cache_dir}")
+
+            # Load model
+            try:
+                import xgboost as xgb
+                model = xgb.Booster()
+                model.load_model(str(extracted_model_path / "xgboost-model"))
+                self.models[macro] = model
+                logger.info(f"Loaded latest production model for {macro}")
+            except Exception as e:
+                logger.error(f"Error loading model for {macro}: {e}")
+                raise
+        
+    def _load_local_transformers(self):
+        try:
+            self.tfidf = load(self.tfidf_path)
+            self.svd = load(self.svd_path)
+            logger.info("Local transformer objects loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading local transformer objects: {e}")
+            raise
+        
+    def _load_production_transformers(self):
+        """Download transformers from S3"""
+        try:
+            transformers = ["tfidf_transformer.joblib", "svd_transformer.joblib"]
+            s3_bucket = "iifymate-ml-data"
+            
+            for transformer in transformers:
+                local_path = self.transformer_dir / transformer
+                s3_path = f"feature_Store/transformers/{transformer}"
+                
+                # Download only if not already cached
+                if not local_path.exists():
+                    logger.info(f"Downloading {transformer} from S3...")
+                    self.s3_client.download_file(s3_bucket, s3_path, str(local_path))
+                    
+            # Load models
+            self.tfidf = joblib.load(self.transformer_dir / "tfidf_transformer.joblib")
+            self.svd = joblib.load(self.transformer_dir / "svd_transformer.joblib")
+            logger.info("Production transformer objects loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading production transformer objects: {e}")
+            raise
             
 
     def preprocess_input(self, text: str) -> pd.DataFrame:

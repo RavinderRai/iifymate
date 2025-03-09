@@ -255,3 +255,5 @@ class MLFlowExperimentTracker:
 
         logger.info("All runs completed. Closing MLflow run...")
         
+# Command to start mlflow server
+# mlflow server --backend-store-uri postgresql://iifymateadmin:Quantum4ier\!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb --default-artifact-root s3://iifymate-ml-data/models/ --host 0.0.0.0 --port 5000
