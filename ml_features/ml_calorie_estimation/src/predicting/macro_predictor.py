@@ -1,13 +1,17 @@
+import io
 import os
+import tarfile
 import joblib
 import numpy as np
 import mlflow
 import boto3
 import pandas as pd
 import logging
+import xgboost as xgb
 from joblib import load
 from pathlib import Path
 
+from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
 from ml_features.ml_calorie_estimation.src.feature_engineering.text_processing import remove_stop_words, lemmatizing
 
 logger = logging.getLogger(__name__)
@@ -20,9 +24,9 @@ class MacroPredictor:
         
         # Map of macro types to their model names
         self.macro_types = {
-            'fat': 'fat',
-            'carbs': 'carbohydrates_net',
-            'protein': 'protein'
+            'fat': 'Fat',
+            'carbohydrates_net': 'Carbohydrates_net',
+            'protein': 'Protein'
         }
         
         self.experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction"
@@ -54,8 +58,14 @@ class MacroPredictor:
             mlflow.set_tracking_uri(f"file://{tracking_uri}")
             
             self._load_latest_local_models()
-        else:
-            tracking_uri = "postgresql://iifymateadmin:Quantum4ier!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb"
+        elif self.env == "production":
+            database_config = DatabaseConfig(
+                username=os.getenv("RDS_USERNAME"),
+                password=os.getenv("RDS_PASSWORD"),
+                host=os.getenv("RDS_HOST"),
+                database="mlflowdb"
+            )
+            tracking_uri = f"postgresql://{database_config.username}:{database_config.password}@{database_config.host}/{database_config.database}"
             mlflow.set_tracking_uri(tracking_uri)
             
             # Set paths for transformers and models
@@ -108,49 +118,54 @@ class MacroPredictor:
             #logger.info(f"Loaded {macro_type} model from run: {run_id}")
         
     def _load_latest_production_models(self):
-        for macro in self.macro_types:
-            logger.info(f"Fetching latest model for {macro} from MLflow Registry...")
+        client = mlflow.MlflowClient()
             
-            #latest_version = max(
-            #    [int(v.version) for v in mlflow.MlflowClient().get_registered_model(model_name).latest_versions]
-            #)
+        for macro_type, model_name in self.macro_types.items():
+            logger.info(f"Fetching latest model for {macro_type} from MLflow Registry...")
             
-            #model_uri = f"models:/{model_name}/{latest_version}"
+            model_name = f"xgboost_target_{model_name}"
             
-    def _load_latest_production_models(self):
-        """Fetch latest models from MLflow Registry & download from S3."""
-        macro_types = ["fat", "carbohydrates_net", "protein"]
-        
-        for macro in macro_types:
-            logger.info(f"Fetching latest model for {macro} from MLflow Registry...")
+            registered_model = client.get_registered_model(model_name)
             
-            # Get the latest model version from MLflow Registry
-            model_version = mlflow.registered_model.get_latest_versions(f"xgboost_{macro}", stages=["Production"])[0]
-            model_s3_uri = model_version.source
-
-            # Extract S3 bucket and key
-            s3_bucket, s3_key = model_s3_uri.replace("s3://", "").split("/", 1)
-            local_model_path = self.model_cache_dir / f"xgboost_{macro}.tar.gz"
-            extracted_model_path = self.model_cache_dir / f"xgboost_{macro}"
-
-            # Download model if not already cached
-            if not extracted_model_path.exists():
-                logger.info(f"Downloading {macro} model from {model_s3_uri}...")
-                self.s3_client.download_file(s3_bucket, s3_key, str(local_model_path))
-
-                # Extract model
-                os.system(f"tar -xzf {local_model_path} -C {self.model_cache_dir}")
-
-            # Load model
-            try:
-                import xgboost as xgb
-                model = xgb.Booster()
-                model.load_model(str(extracted_model_path / "xgboost-model"))
-                self.models[macro] = model
-                logger.info(f"Loaded latest production model for {macro}")
-            except Exception as e:
-                logger.error(f"Error loading model for {macro}: {e}")
-                raise
+            if not registered_model:
+                raise ValueError(f"Registered model {model_name} not found.")
+            
+            latest_version = max([int(v.version) for v in registered_model.latest_versions])
+            model_details = client.get_model_version(model_name, str(latest_version))
+            
+            
+            
+            s3_path = model_details.source
+            if not s3_path.startswith("s3://"):
+                raise ValueError(f"Model source is not an S3 path: {s3_path}")
+            
+            s3_parts = s3_path.replace("s3://", "").split("/", 1)
+            s3_bucket = s3_parts[0]
+            s3_key = s3_parts[1]
+            logger.debug(f"S3 bucket: {s3_bucket}, S3 key: {s3_key}")
+            
+            response = self.s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+            model_tar = response["Body"].read()
+            
+            logger.info("Extracting model to temp directory...")
+            model_dir = self.model_cache_dir / model_name
+            os.makedirs(model_dir, exist_ok=True)
+            
+            with tarfile.open(fileobj=io.BytesIO(model_tar), mode="r:gz") as tar:
+                tar.extractall(path=model_dir)
+                
+            model_files = os.listdir(model_dir)
+            pickle_file = next((f for f in model_files if f.endswith(".pkl")), None)
+            
+            if pickle_file is None:
+                raise FileNotFoundError(f"Pickle file not found in model directory: {model_dir}")
+            
+            model_path = os.path.join(model_dir, pickle_file)
+            model = xgb.Booster()
+            model.load_model(model_path)
+            self.models[macro_type] = model
+                
+        logger.info(f"Successfully loaded all models: {list(self.models.keys())}")
         
     def _load_local_transformers(self):
         try:
@@ -169,7 +184,7 @@ class MacroPredictor:
             
             for transformer in transformers:
                 local_path = self.transformer_dir / transformer
-                s3_path = f"feature_Store/transformers/{transformer}"
+                s3_path = f"feature_store/transformers/{transformer}"
                 
                 # Download only if not already cached
                 if not local_path.exists():
@@ -194,14 +209,17 @@ class MacroPredictor:
     
     def predict(self, text_input) -> dict[str, float]:
         try:
-            input = self.preprocess_input(text_input)
+            input_features = self.preprocess_input(text_input)
+            
+            dmatrix_input = xgb.DMatrix(input_features)
+            
             predictions = {}
             
             for macro_type, model in self.models.items():
-                pred = np.expm1(model.predict(input)[0])
+                pred = np.expm1(model.predict(dmatrix_input)[0])
                 predictions[macro_type] = int(pred)
                 
-            calories = 9*predictions['fat'] + 4*predictions['protein'] + 4*predictions['carbs']
+            calories = 9*predictions['fat'] + 4*predictions['protein'] + 4*predictions['carbohydrates_net']
             predictions['calories'] = int(calories)
                 
             return predictions

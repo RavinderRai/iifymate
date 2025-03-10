@@ -112,7 +112,7 @@ def main():
 
     # Save model (SageMaker expects it in `/opt/ml/model/`)
     model_path = os.path.join(MODEL_DIR, f"xgboost-{macro}-model.pkl")
-    joblib.dump(model, model_path)
+    model.save_model(model_path) #joblib.dump(model, model_path)
     logger.info(f"Model saved to {model_path}")
     
     return r2, custom_metric_value

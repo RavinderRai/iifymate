@@ -8,9 +8,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ~/.aws:/root/.aws:ro
       - ./ml_features/ml_calorie_estimation/mlruns:/app/ml_features/ml_calorie_estimation/mlruns
       - ./ml_features/ml_calorie_estimation/feature_store:/app/ml_features/ml_calorie_estimation/feature_store
+    env_file:
+      - .env
     environment:
+      - AWS_PROFILE=default
       - PYTHONPATH=/app
       - ML_PROJECT_ROOT=/app/ml_features/ml_calorie_estimation
       - PYTHONUNBUFFERED=1
