@@ -2,8 +2,7 @@ import os
 from pathlib import Path
 import logging
 
-from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
-from ml_features.ml_calorie_estimation.src.training.data_loader import get_feature_paths, load_training_data, clean_training_testing_data
+from ml_features.ml_calorie_estimation.src.training.data_loader import load_training_data, clean_training_testing_data
 from ml_features.ml_calorie_estimation.src.training.models.xgboost.model import XGBoostModel
 from ml_features.ml_calorie_estimation.src.training.models.xgboost.sagemaker_model import SageMakerModel
 from ml_features.ml_calorie_estimation.src.training.experiment_tracker import MLFlowExperimentTracker
