@@ -41,6 +41,9 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
     )
     
     # Collect recipes
+    # Note it is important to do this first before initializing the database, 
+    # otherwise the connection will timeout and the data will not be stored. 
+    # Also, make sure to modify collection later so that the data is stored as it's collected instead of all at once
     recipes = await collector.collect_recipes(
         target_recipes=collector_config.target_recipes
     )
