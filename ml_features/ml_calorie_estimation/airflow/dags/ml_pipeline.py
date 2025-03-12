@@ -35,7 +35,7 @@ def run_script(script_name):
     env_vars = os.environ.copy()  # Copy current environment variables
     env_vars["ENV"] = Variable.get("ENV", default_var="local")  # Set ENV variable
     
-    subprocess.run(["python", "-m", script_path], check=True, env=env_vars)  # Pass env
+    subprocess.run(["/home/ravib/projects/iifymate/.iifymate/bin/python", "-m", script_path], check=True, env=env_vars)
 
     
 # Define tasks

@@ -198,3 +198,5 @@ ml_features/ml_calorie_estimation/mlruns/
 
 
 notebooks/ml_calorie_estimation/model_dir/
+
+.airflow/
