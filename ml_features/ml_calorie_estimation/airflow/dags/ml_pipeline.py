@@ -35,8 +35,17 @@ def run_script(script_name):
     env_vars = os.environ.copy()  # Copy current environment variables
     env_vars["ENV"] = Variable.get("ENV", default_var="local")  # Set ENV variable
     
-    subprocess.run(["/home/ravib/projects/iifymate/.iifymate/bin/python", "-m", script_path], check=True, env=env_vars)
+    #subprocess.run(["/home/ravib/projects/iifymate/.iifymate/bin/python", "-m", script_path], check=True, env=env_vars)
 
+    command = f"source /home/ravib/projects/iifymate/.iifymate/bin/activate && python -m {script_path}"
+
+    subprocess.run(
+        command,
+        shell=True,  # Required for `source` to work
+        executable="/bin/bash",  # Ensure correct shell is used
+        check=True,
+        env=env_vars
+    )
     
 # Define tasks
 data_ingestion_task = PythonOperator(

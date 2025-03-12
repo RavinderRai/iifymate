@@ -40,15 +40,15 @@ async def collect_and_store_recipes(env: str = "local", delete_all_recipes: bool
         semaphore=semaphore
     )
     
-    db_manager = DatabaseManager(db_config)
-    db_manager.init_db()
-    # Check if table already exists and create if not
-    db_manager.create_table(RawRecipe)
-
     # Collect recipes
     recipes = await collector.collect_recipes(
         target_recipes=collector_config.target_recipes
     )
+    
+    db_manager = DatabaseManager(db_config)
+    db_manager.init_db()
+    # Check if table already exists and create if not
+    db_manager.create_table(RawRecipe)
     
     if delete_all_recipes:
         logger.info("Deleting all recipes from database...")

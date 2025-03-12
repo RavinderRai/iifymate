@@ -58,9 +58,9 @@ def run_training(env:str = "local"):
 
         # SageMaker Tuning expects ranges as tuples, not lists of specific values
         param_grid = {
-            'eta': (0.01, 0.3),  # SageMaker's version of learning_rate
-            'max_depth': (3, 5),
-            'num_round': (50, 150)  # SageMaker's version of n_estimators
+            'eta': (0.01, 0.2),  # SageMaker's version of learning_rate
+            'max_depth': (3, 10),
+            'num_round': (100, 500)  # SageMaker's version of n_estimators
         }
         
         experiment_tracker = MLFlowExperimentTracker(model_instance, macros, env)
