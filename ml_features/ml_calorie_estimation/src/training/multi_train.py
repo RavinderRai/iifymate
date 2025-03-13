@@ -6,7 +6,9 @@ from pathlib import Path
 import os
 import shutil
 
+
 from ml_features.ml_calorie_estimation.src.training.model_utils import grid_search_parameters, train_macro_model, evaluate_model
+from ml_features.ml_calorie_estimation.src.utils import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,20 +20,24 @@ def clean_mlruns():
         shutil.rmtree(mlflow_dir)
     os.makedirs(mlflow_dir)
 
-def setup_mlflow(env: str = "local"):
+
+def setup_mlflow(env: str = "local", aws_config: Dict = None):
     """Set up MLflow tracking"""
-    mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
-    os.makedirs(mlflow_dir, exist_ok=True)
-    
-    # Set tracking URI
-    mlflow.set_tracking_uri(f"file://{mlflow_dir}")
+    if env == "local":
+        mlflow_dir = Path(__file__).parent.parent.parent / "mlruns"
+        os.makedirs(mlflow_dir, exist_ok=True)
+        mlflow.set_tracking_uri(f"file://{mlflow_dir}")
+    else:
+        # Use S3 for MLflow tracking
+        mlflow.set_tracking_uri(f"s3://{aws_config.s3_bucket}/mlflow/")
     
     # Set up experiment
-    experiment_name = "macro_nutrient_prediction_dev" if env == "local" else "macro_nutrient_prediction_prod"
+    experiment_name = f"macro_nutrient_prediction_{env}"
     try:
         mlflow.create_experiment(experiment_name)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Error creating MLflow experiment: {e}")
+        raise
     
     mlflow.set_experiment(experiment_name)
     return experiment_name
@@ -47,8 +53,14 @@ def train_all_macro_models(
     Trains models for all macronutrients with grid search and MLflow tracking
     """
     # Clean up and set up MLflow
-    clean_mlruns()
-    experiment_name = setup_mlflow(env)
+    if env == "local": 
+        clean_mlruns()
+        aws_config = None
+    else:
+        config = load_config(env)
+        aws_config = config.aws
+
+    experiment_name = setup_mlflow(env, aws_config)
     
     models = {}
     all_metrics = {}
@@ -56,22 +68,22 @@ def train_all_macro_models(
     active_run = mlflow.active_run()
     if active_run:
         mlflow.end_run()
+        
+    param_grid = {
+        'learning_rate': [0.01],
+        'max_depth': [3, 5],
+        'n_estimators': [100]
+    }
     
     for macro in ['target_Fat', 'target_Carbohydrates_net', 'target_Protein']:
         model_name = macro.lower().replace("target_", "")
         logger.info(f"\nTraining model for {macro}")
         
-        param_grid = {
-            'learning_rate': [0.01],
-            'max_depth': [3, 5],
-            'n_estimators': [100]
-        }
-        
         # Make sure no run is active before starting a new one
         if mlflow.active_run():
             mlflow.end_run()
             
-        with mlflow.start_run(run_name=model_name) as run:
+        with mlflow.start_run(run_name=model_name) as run:            
             logger.info(f"MLflow run ID: {run.info.run_id}")
             
             # Set tags

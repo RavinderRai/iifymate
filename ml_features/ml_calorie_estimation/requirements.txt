@@ -1,5 +1,6 @@
 aiohttp==3.11.11
-aiohttp==3.11.11
+boto3==1.36.23
+botocore==1.36.23
 fastapi==0.115.8
 feast==0.43.0
 httpx==0.28.1
@@ -9,6 +10,7 @@ mlflow_skinny==2.20.0
 nltk==3.9.1
 numpy==1.26.4
 pandas==2.2.3
+psycopg2-binary==2.9.10
 prometheus_client==0.21.1
 pydantic==2.10.6
 pytest==8.3.4

@@ -10,7 +10,9 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-predictor = MacroPredictor(env="local")
+
+env = os.getenv("ENV", "local")
+predictor = MacroPredictor(env=env)
 
 REQUESTS = Counter('calorie_predictions_total', 'Total number of predictions made')
 PREDICTION_TIME = Histogram('prediction_latency_seconds', 'Time spent processing prediction')

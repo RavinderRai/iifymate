@@ -14,6 +14,7 @@ COPY ml_features /app/ml_features
 
 ENV PYTHONPATH=/app
 ENV ML_PROJECT_ROOT=/app/ml_features/ml_calorie_estimation
+ENV ENV=production
 
 EXPOSE 8000
 

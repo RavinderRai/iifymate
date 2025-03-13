@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from ml_features.ml_calorie_estimation.src.data_ingestion.utils import (
+from ml_features.ml_calorie_estimation.src.utils import (
     create_db_config,
     load_config
 )
@@ -45,7 +45,7 @@ def clean_and_store_recipes(env: str = "local", delete_all_recipes: bool = False
     
     # Initialize database and load raw data
     logger.info("Creating database configuration.")
-    db_config = create_db_config(config.database)
+    db_config = create_db_config(config.database, env=env)
     db_manager = DatabaseManager(db_config)
     # Create the table if it doesn't exist
     db_manager.create_table(CleanRecipe)
@@ -73,8 +73,10 @@ def clean_and_store_recipes(env: str = "local", delete_all_recipes: bool = False
 if __name__ == "__main__":
     # Run this command in WSL in root directory to test:
     # python -m ml_features.ml_calorie_estimation.pipeline.data_cleaning
+    import os
+    environment = os.getenv("ENV", "local")
     
     logger.info("Cleaning raw recipe data and storing in another table...")
-    num_stored = clean_and_store_recipes(env="local", delete_all_recipes=True)
+    num_stored = clean_and_store_recipes(env=environment, delete_all_recipes=True)
     logger.info(f"Successfully cleaned and stored {num_stored} records")
     
