@@ -10,7 +10,7 @@ resource "aws_security_group" "calorie_app_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["your-ip/32"] # Restrict SSH to your IP
+    cidr_blocks = ["142.163.34.185/32"] # Restrict SSH to your IP
   }
 
   ingress {
@@ -43,7 +43,7 @@ resource "aws_security_group" "calorie_app_sg" {
 }
 
 resource "aws_instance" "calorie_app" {
-  ami           = "ami-0c55b159cbfafe1f0"
+  ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = "t2.micro"
   key_name      = "ml-macro-service"
   security_groups = [aws_security_group.calorie_app_sg.name]
@@ -53,7 +53,7 @@ resource "aws_instance" "calorie_app" {
     volume_type = "gp2"
   }
 
-  user_data = file("infra/terraform/scripts/setup_docker.sh")
+  user_data = file("../scripts/setup_docker.sh")
 
   tags = {
     Name = "CalorieApp-Server"
