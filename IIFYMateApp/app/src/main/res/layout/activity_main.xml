@@ -4,100 +4,124 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
     <RelativeLayout
         android:layout_gravity="center_vertical|center_horizontal"
         android:layout_width="350dp"
-        android:layout_height="552dp"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:background="#F8FFF7"
+        android:elevation="4dp">
 
         <TextView
             android:id="@+id/macro_predictor_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="24dp"
             android:text="@string/app_title"
             android:textAlignment="center"
             android:textColor="@color/black"
-            android:textSize="40sp" />
+            android:textSize="36sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/functionality_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="120dp"
+            android:layout_below="@id/macro_predictor_title"
+            android:layout_marginTop="16dp"
+            android:layout_marginHorizontal="8dp"
             android:gravity="center_horizontal"
-            android:text="@string/functionality_description"
+            android:text="Take a photo of your meal to instantly get it's macronutrients."
             android:textColor="@color/black"
-            android:textSize="20sp" />
+            android:textSize="18sp" />
 
-        <Spinner
-            android:id="@+id/spinner"
-            android:layout_width="360dp"
-            android:layout_height="60dp"
-            android:textSize="16sp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="230dp" />
+        <!-- Primary Camera Section -->
+        <Button
+            android:id="@+id/take_photo"
+            android:layout_width="240dp"
+            android:layout_height="66dp"
+            android:layout_below="@id/functionality_description"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="32dp"
+            android:text="📸 Take Photo"
+            android:textSize="18sp" />
 
-        <EditText
-            android:id="@+id/input_recipe_name"
-            android:layout_width="360dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="300dp"
-            android:autofillHints=""
-            android:hint="@string/recipe_input"
-            android:inputType="text"
-            android:textSize="25sp" />
-
+        <!-- Advanced Options Section -->
         <LinearLayout
+            android:id="@+id/advanced_options"
             android:layout_width="match_parent"
-            android:layout_height="65dp"
-            android:layout_marginTop="370dp"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
+            android:layout_height="wrap_content"
+            android:layout_below="@id/take_photo"
+            android:layout_marginTop="32dp"
+            android:orientation="vertical">
 
-            <Button
-                android:id="@+id/edit_ingredients"
-                android:layout_width="170dp"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="0dp"
                 android:layout_gravity="center"
-                android:text="@string/ingredients_button" />
+                android:text="Advanced Options"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
 
-            <Button
-                android:id="@+id/get_macros"
-                android:layout_width="170dp"
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="@android:color/darker_gray" />
+
+            <Spinner
+                android:id="@+id/spinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="12dp"
+                android:textSize="16sp"
+                android:background="@android:drawable/btn_dropdown" />
+
+            <EditText
+                android:id="@+id/input_recipe_name"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="0dp"
-                android:layout_gravity="center"
-                android:text="@string/predict_macros_button" />
+                android:layout_marginBottom="12dp"
+                android:hint="@string/recipe_input"
+                android:inputType="text"
+                android:padding="12dp"
+                android:textSize="16sp"
+                android:background="@android:drawable/edit_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <Button
+                    android:id="@+id/edit_ingredients"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/ingredients_button"
+                    android:textSize="14sp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                <Button
+                    android:id="@+id/get_macros"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/predict_macros_button"
+                    android:textSize="14sp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            </LinearLayout>
         </LinearLayout>
+
     </RelativeLayout>
 
-
-    <!--
-    <ImageView
-        android:id="@+id/topFoodGraphic"
-        android:layout_width="489dp"
-        android:layout_height="275dp"
-        android:layout_marginStart="-40dp"
-        android:layout_marginTop="-65dp"
-        android:src="@drawable/foods_as_border"
-        android:rotation="0"
-        android:contentDescription="@string/top_food_graphic_desc" />
-
-    <ImageView
-        android:id="@+id/bottomFoodGraphic"
-        android:layout_width="455dp"
-        android:layout_height="210dp"
-        android:layout_marginStart="-20dp"
-        android:layout_marginTop="600dp"
-        android:contentDescription="@string/bottom_food_graphic_desc"
-        android:rotation="0"
-        android:src="@drawable/veggies_border" />
-     -->
+    <Button
+        android:id="@+id/test_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test with Sample Image"/>
 
 </FrameLayout>

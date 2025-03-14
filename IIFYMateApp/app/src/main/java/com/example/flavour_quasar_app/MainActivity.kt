@@ -3,9 +3,13 @@ package com.example.flavour_quasar_app
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 //import android.util.Log
@@ -23,32 +27,76 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
+import android.widget.Toast
 import androidx.activity.ComponentActivity
-import io.ktor.client.*
-//import com.example.flavour_quasar_app.CosineSimilarity
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpStatusCode
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.json.JSONArray
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import android.util.Log
+import android.Manifest
+import androidx.activity.result.contract.ActivityResultContracts
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 
 class MainActivity : ComponentActivity() {
     private lateinit var buttonOpenPopup: Button
     private lateinit var buttonPredictMacros: Button
+    private lateinit var buttonTakePhoto: Button
+    private var photoUri: Uri? = null
+    private val mlApiService = MLApiService()
+    private val macroPredictor = MacroPredictor("http://localhost:8000")
+
+    private lateinit var buttonTestMode: Button
+
+
+
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        Log.d("Camera", "Take picture result: $success")
+        if (success) {
+            photoUri?.let { uri ->
+                Log.d("Camera", "Processing image with URI: $uri")
+                processImage(uri)
+            } ?: run {
+                Log.e("Camera", "Error: photoUri is null")
+                Toast.makeText(this, "Error: No image captured", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Log.e("Camera", "Camera capture failed")
+            Toast.makeText(this, "Camera capture cancelled or failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    companion object {
+        private const val CAMERA_PERMISSION_CODE = 1
+        private const val CAMERA_REQUEST_CODE = 2
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
+        // Initialize all buttons
+        buttonTakePhoto = findViewById(R.id.take_photo)
+        buttonOpenPopup = findViewById(R.id.edit_ingredients)
+        buttonPredictMacros = findViewById(R.id.get_macros)
 
+        val editText: EditText = findViewById<EditText>(R.id.input_recipe_name)
         var selectedDietType = ""
+
         val spinner: Spinner = findViewById<Spinner>(R.id.spinner)
         val adapter: ArrayAdapter<CharSequence> = ArrayAdapter.createFromResource(
             this,
@@ -67,9 +115,25 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+
+
+        buttonTakePhoto.setOnClickListener {
+            if (checkCameraPermission()) {
+                openCamera()
+            } else {
+                requestCameraPermission()
+            }
+        }
+
+        buttonTestMode = findViewById<Button>(R.id.test_mode)
+        buttonTestMode.setOnClickListener { loadTestImage() }
+
+
+
         // grey out - meaning disable - button to make predictions until user enters a recipe
         buttonOpenPopup = findViewById(R.id.edit_ingredients)
         buttonPredictMacros = findViewById(R.id.get_macros)
+
         buttonOpenPopup.isEnabled = false
         buttonPredictMacros.isEnabled = false
 
@@ -87,69 +151,235 @@ class MainActivity : ComponentActivity() {
                 // No implementation needed
             }
         })
-        buttonOpenPopup.setOnClickListener() {
-            KeyboardUtils.hideKeyboard(this)
 
-            val loadingDialog = showLoadingDialog()
+//        buttonOpenPopup.setOnClickListener() {
+//            KeyboardUtils.hideKeyboard(this)
+//
+//            val loadingDialog = showLoadingDialog()
+//
+//            val userInputRecipe = editText.text.toString()
+//
+//            val predictor = FlaskPredictor()
+//
+//            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+//
+//            coroutineScope.launch {
+//                try {
+//                    val predictedIngredients = predictor.getIngredientsList(userInputRecipe)
+//                    showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
+//                } catch (e: Exception) {
+//                    // Handle exceptions, if any
+//                } finally {
+//                    loadingDialog.dismiss()
+//                }
+//            }
+//        }
 
-            val userInputRecipe = editText.text.toString()
+//        buttonPredictMacros.setOnClickListener() {
+//            val loadingDialog = showLoadingDialog()
+//
+//            val userInputRecipe = editText.text.toString()
+//
+//            val predictor = FlaskPredictor()
+//
+//            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+//
+//            var predictedFat = 0
+//            var predictedCarbs = 0
+//            var predictedProtein = 0
+//            var predictedCalories = 0
+//            var macroPredictionInput: String
+//
+//            coroutineScope.launch {
+//                try {
+//                    val ingredientsList = predictor.getIngredientsList(userInputRecipe)
+//                    val concatenatedIngredients = ingredientsList.joinToString(separator = " ")
+//                    macroPredictionInput = "$selectedDietType $userInputRecipe $concatenatedIngredients"
+//
+//                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
+//
+//                    val (fat, carbs, protein, calories) = macroPredictions
+//                    predictedFat = fat
+//                    predictedCarbs = carbs
+//                    predictedProtein = protein
+//                    predictedCalories = calories
+//
+//                    // Use the predicted values as needed
+//                    // For example, pass them to another function or update UI components
+//                } catch (e: Exception) {
+//                    // Handle exceptions, if any
+//                } finally {
+//                    loadingDialog.dismiss()
+//                    launchMacrosWindow(userInputRecipe, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
+//                }
+//            }
+//        }
+    }
 
-            val predictor = FlaskPredictor()
+    private fun checkCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
-            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private fun requestCameraPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA),
+            CAMERA_PERMISSION_CODE
+        )
+    }
 
-            coroutineScope.launch {
-                try {
-                    val predictedIngredients = predictor.getIngredientsList(userInputRecipe)
-                    showPopupWindow(userInputRecipe, selectedDietType, predictedIngredients)
-                } catch (e: Exception) {
-                    // Handle exceptions, if any
-                } finally {
-                    loadingDialog.dismiss()
-                }
+    private fun openCamera() {
+        try {
+            Log.d("Camera", "Opening camera...")
+            // Start with a basic camera intent
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                val photoFile = createImageFile()
+                photoUri = FileProvider.getUriForFile(
+                    this,
+                    "${applicationContext.packageName}.provider",
+                    photoFile
+                )
+                Log.d("Camera", "Created URI: $photoUri")
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
+            } else {
+                Log.e("Camera", "No camera app available")
+                Toast.makeText(this, "No camera app available", Toast.LENGTH_SHORT).show()
             }
+        } catch (e: Exception) {
+            Log.e("Camera", "Error opening camera", e)
+            Toast.makeText(this, "Error opening camera: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
 
-        buttonPredictMacros.setOnClickListener() {
-            val loadingDialog = showLoadingDialog()
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.d("Camera", "onActivityResult: requestCode=$requestCode, resultCode=$resultCode")
 
-            val userInputRecipe = editText.text.toString()
-
-            val predictor = FlaskPredictor()
-
-            val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-            var predictedFat = 0
-            var predictedCarbs = 0
-            var predictedProtein = 0
-            var predictedCalories = 0
-            var macroPredictionInput: String
-
-            coroutineScope.launch {
-                try {
-                    val ingredientsList = predictor.getIngredientsList(userInputRecipe)
-                    val concatenatedIngredients = ingredientsList.joinToString(separator = " ")
-                    macroPredictionInput = "$selectedDietType $userInputRecipe $concatenatedIngredients"
-
-                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
-
-                    val (fat, carbs, protein, calories) = macroPredictions
-                    predictedFat = fat
-                    predictedCarbs = carbs
-                    predictedProtein = protein
-                    predictedCalories = calories
-
-                    // Use the predicted values as needed
-                    // For example, pass them to another function or update UI components
-                } catch (e: Exception) {
-                    // Handle exceptions, if any
-                } finally {
-                    loadingDialog.dismiss()
-                    launchMacrosWindow(userInputRecipe, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                photoUri?.let { uri ->
+                    Log.d("Camera", "Processing image with URI: $uri")
+                    processImage(uri)
+                } ?: run {
+                    Log.e("Camera", "No photo URI available")
+                    Toast.makeText(this, "Error: No image captured", Toast.LENGTH_SHORT).show()
                 }
+            } else {
+                Log.e("Camera", "Camera result not OK: $resultCode")
+                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    private fun createImageFile(): File {
+        try {
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val storageDir = getExternalFilesDir("Pictures")
+            Log.d("Camera", "Storage directory: ${storageDir?.absolutePath}")
+            return File.createTempFile(
+                "MEAL_${timeStamp}_",
+                ".jpg",
+                storageDir
+            ).apply {
+                Log.d("Camera", "Created temp file: $absolutePath")
+            }
+        } catch (e: Exception) {
+            Log.e("Camera", "Error creating image file", e)
+            throw e
+        }
+    }
+
+
+
+    private fun processImage(uri: Uri) {
+        val loadingDialog = showLoadingDialog()
+        val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+        coroutineScope.launch {
+            try {
+                val predictions = mlApiService.uploadImage(uri, this@MainActivity)
+                predictions?.let {
+                    launchMacrosWindow(
+                        "Photo Analysis",
+                        it.calories,
+                        it.fat,
+                        it.carbs,
+                        it.protein
+                    )
+                } ?: run {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Could not get predictions. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error processing image: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } finally {
+                loadingDialog.dismiss()
+            }
+        }
+    }
+
+
+    private fun enableTestMode() {
+        findViewById<Button>(R.id.test_mode).apply {
+            visibility = View.VISIBLE
+            setOnClickListener { loadTestImage() }
+        }
+    }
+
+    private fun loadTestImage() {
+        try {
+            // Load a test image from your app's resources
+            val inputStream = resources.openRawResource(R.raw.test_meal)
+            val file = createImageFile()
+            file.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+
+            photoUri = FileProvider.getUriForFile(
+                this,
+                "${applicationContext.packageName}.provider",
+                file
+            )
+
+            processImage(photoUri!!)
+        } catch (e: Exception) {
+            Log.e("TestImage", "Error loading test image", e)
+        }
+    }
+
+
+    private suspend fun testApiEndpoint() {
+        try {
+            val testImageBytes = resources.openRawResource(R.raw.test_meal).readBytes()
+            val result = mlApiService.uploadImage(createTestUri(testImageBytes), this)
+            Log.d("API Test", "Result: $result")
+        } catch (e: Exception) {
+            Log.e("API Test", "Error testing endpoint", e)
+        }
+    }
+
+    private fun createTestUri(bytes: ByteArray): Uri {
+        val file = createImageFile()
+        file.writeBytes(bytes)
+        return FileProvider.getUriForFile(
+            this,
+            "${applicationContext.packageName}.provider",
+            file
+        )
+    }
+
     private fun showPopupWindow(userInput: String, selectedDietType: String, ingredientsList: List<String>) {
         val popupView = layoutInflater.inflate(R.layout.ingredients_popup, null)
 
@@ -234,7 +464,7 @@ class MainActivity : ComponentActivity() {
 
             //Log.d("Model Prediction Input", macroPredictionInput)
 
-            val predictor = FlaskPredictor()
+            //val predictor = macroPredictor.predictMacros()
 
             val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -243,24 +473,24 @@ class MainActivity : ComponentActivity() {
             var predictedProtein = 0
             var predictedCalories = 0
 
-            coroutineScope.launch {
-                try {
-
-                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
-
-                    val (fat, carbs, protein, calories) = macroPredictions
-                    predictedFat = fat
-                    predictedCarbs = carbs
-                    predictedProtein = protein
-                    predictedCalories = calories
-                } catch (e: Exception) {
-                    // Handle exceptions, if any
-                } finally {
-                    loadingDialog.dismiss()
-                    popupWindow.dismiss()
-                    launchMacrosWindow(userInput, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
-                }
-            }
+//            coroutineScope.launch {
+//                try {
+//
+//                    val macroPredictions = predictor.getMacroPredictions(macroPredictionInput)
+//
+//                    val (fat, carbs, protein, calories) = macroPredictions
+//                    predictedFat = fat
+//                    predictedCarbs = carbs
+//                    predictedProtein = protein
+//                    predictedCalories = calories
+//                } catch (e: Exception) {
+//                    // Handle exceptions, if any
+//                } finally {
+//                    loadingDialog.dismiss()
+//                    popupWindow.dismiss()
+//                    launchMacrosWindow(userInput, predictedCalories, predictedFat, predictedCarbs, predictedProtein)
+//                }
+//            }
         }
 
         // Show the popup window
@@ -326,80 +556,7 @@ class MainActivity : ComponentActivity() {
     }
     data class PredictedValues(val fat: Int, val carbs: Int, val protein: Int, val calories: Int)
     // http://192.168.0.165:5000 // local link
-    class FlaskPredictor(private val baseUrl: String = "https://flask-pred-go4e5g7vpq-uc.a.run.app") {
 
-        private val client = HttpClient()
-
-        private suspend fun predict(endpoint: String, inputData: String): String? {
-            val url = "$baseUrl/$endpoint"
-            return try {
-
-                val response: HttpResponse = client.post(url) {
-                    val jsonInput = JSONObject().apply {
-                        put("user_input", inputData)
-                    }
-                    // Set the JSON object as the body of the request
-                    setBody(jsonInput.toString())
-                }
-
-
-                //Log.d("Response", response.toString())
-
-                if (response.status == HttpStatusCode.OK) {
-                    // Read the response body as a string
-                    val responseBody = response.bodyAsText()
-
-                    // Log the response body
-                    //Log.d("ResponseBody", "Response body: $responseBody, Type: ${responseBody.javaClass.simpleName}")
-                    responseBody
-                } else {
-                    //Log.e("Response", "Error: ${response.status}")
-                    null
-                }
-            } catch (e: Exception) {
-                //.e("Response", "Error occurred: ${e.message}")
-                null
-            }
-        }
-        suspend fun getMacroPredictions(macroPredictionInput: String): PredictedValues {
-            var predictedFat = 0.0
-            var predictedCarbs = 0.0
-            var predictedProtein = 0.0
-            var predictedCalories = 0.0
-
-            val macrosPrediction = predict("predict_macros", macroPredictionInput)
-
-            macrosPrediction?.let { response ->
-                // Parse JSON response
-                val jsonResponse = JSONObject(response)
-
-                // Extract predicted values
-                predictedFat = jsonResponse.getDouble("predicted_fat")
-                predictedCarbs = jsonResponse.getDouble("predicted_carbs")
-                predictedProtein = jsonResponse.getDouble("predicted_protein")
-                predictedCalories = jsonResponse.getDouble("calories")
-
-
-                // Now you have the predicted values
-                //Log.d("PredictedValues", "Fat: $predictedFat, Carbs: $predictedCarbs, Protein: $predictedProtein, Calories: $predictedCalories")
-            }
-
-            // Return a Quad containing the predicted values and calories
-            return PredictedValues(predictedFat.toInt(), predictedCarbs.toInt(), predictedProtein.toInt(), predictedCalories.toInt())
-        }
-        suspend fun getIngredientsList(inputRecipeName: String): List<String> {
-            val ingredientsPrediction = predict("predict_ingredients", inputRecipeName)
-
-            val ingredients = mutableListOf<String>()
-
-            val jsonArray = JSONArray(ingredientsPrediction)
-            for (i in 0 until jsonArray.length()) {
-                ingredients.add(jsonArray.getString(i))
-            }
-            //Log.d("ingredientsType", "Response body: $ingredients, Type: ${ingredients.javaClass.simpleName}")
-            return ingredients
-        }
-    }
     private fun showLoadingDialog(): Dialog {
         val dialog = Dialog(this)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
