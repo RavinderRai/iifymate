@@ -1,5 +1,4 @@
 import os
-import tarfile
 import boto3
 import mlflow
 from pathlib import Path
@@ -9,7 +8,8 @@ import subprocess
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from ml_features.ml_calorie_estimation.src.utils import load_config
+
+from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,7 +28,14 @@ class MLFlowExperimentTracker:
             #config = load_config(env)
             #db_config = config.database
             
-            mlflow_tracking_uri = "postgresql://iifymateadmin:Quantum4ier!@iifymate-db.co5im862y9q7.us-east-1.rds.amazonaws.com/mlflowdb"
+            database_config = DatabaseConfig(
+                username=os.getenv("RDS_USERNAME"),
+                password=os.getenv("RDS_PASSWORD"),
+                host=os.getenv("RDS_HOST"),
+                database="mlflowdb"
+            )
+            
+            mlflow_tracking_uri = f"postgresql://{database_config.username}:{database_config.password}@{database_config.host}/{database_config.database}"
             
             # Use PostgreSQL-based MLFlow tracking
             #mlflow_tracking_uri = db_config.connection_string

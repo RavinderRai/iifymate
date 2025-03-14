@@ -3,7 +3,6 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
-from pathlib import Path
 from ml_features.ml_calorie_estimation.src.predicting.macro_predictor import MacroPredictor
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
