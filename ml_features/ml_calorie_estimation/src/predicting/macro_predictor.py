@@ -20,7 +20,6 @@ class MacroPredictor:
     def __init__(self, env: str = "local"):
         self.env = env
         self.models = {}
-        self.s3_client = boto3.client("s3")
         
         # Map of macro types to their model names
         self.macro_types = {
@@ -59,6 +58,8 @@ class MacroPredictor:
             
             self._load_latest_local_models()
         elif self.env == "production":
+            self.s3_client = boto3.client("s3")
+            
             database_config = DatabaseConfig(
                 username=os.getenv("RDS_USERNAME"),
                 password=os.getenv("RDS_PASSWORD"),
