@@ -52,7 +52,7 @@ def fetch_latest_model_versions():
                 raise ValueError(f"Model source is not an S3 path: {s3_path}")
 
             logger.info(f"✅ Latest model for {macro}: v{latest_version} - {s3_path}")
-            models_info[model_name] = {"s3_path": s3_path, "version": latest_version}
+            models_info[model_name] = {"s3_path": s3_path, "version": str(latest_version)}
 
         except Exception as e:
             logger.error(f"❌ Error fetching model {model_name}: {e}")

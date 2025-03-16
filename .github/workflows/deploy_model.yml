@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
       inputs:
         model_data:
-          description: 'S3 URL of the new model'
+          description: 'JSON dictionary with model versions and S3 paths'
           required: true
           type: string
 
@@ -20,7 +20,7 @@ jobs:
           echo "🔹 Raw model_data input: ${{ github.event.inputs.model_data }}"
           
           # Properly escape JSON before sending to webhook
-          ESCAPED_JSON=$(echo '${{ github.event.inputs.model_data }}' | jq -c .)
+          ESCAPED_JSON=$(echo '${{ github.event.inputs.model_data }}' | jq -c . | sed 's/"/\\"/g')
 
           curl -X POST "http://34.227.104.121:8003/update_model" \
             -H "Content-Type: application/json" \
