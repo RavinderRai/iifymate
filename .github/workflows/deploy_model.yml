@@ -6,6 +6,7 @@ on:
         model_data:
           description: 'S3 URL of the new model'
           required: true
+          type: string
 
 jobs:
   deploy:

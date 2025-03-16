@@ -68,7 +68,7 @@ def trigger_github_actions(model_data: dict):
     Sends a request to GitHub Actions to start deployment.
     
     Args:
-        model_s3_paths (list): List of S3 model paths.
+        model_data (dict): Dictionary with model names, S3 paths, and versions.
     """
     headers = {
         "Authorization": f"token {GITHUB_ACCESS_TOKEN}",
@@ -76,7 +76,7 @@ def trigger_github_actions(model_data: dict):
     }
     payload = {
         "ref": "main",
-        "inputs": {"model_paths": json.dumps(model_data)}
+        "inputs": {"model_data": json.dumps(model_data)}
     }
 
     try:
@@ -85,6 +85,7 @@ def trigger_github_actions(model_data: dict):
         logger.info("✅ GitHub Actions deployment triggered successfully!")
     except requests.exceptions.RequestException as e:
         logger.error(f"❌ Deployment failed: {e}")
+        logger.error(f"🔍 GitHub Response: {response.text}")
 
 if __name__ == "__main__":
     model_s3_paths = fetch_latest_model_versions()
