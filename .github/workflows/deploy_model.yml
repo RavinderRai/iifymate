@@ -1,0 +1,21 @@
+name: Deploy New Model to EC2
+
+on:
+    workflow_dispatch:
+      inputs:
+        model_data:
+          description: 'S3 URL of the new model'
+          required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Send Deployment Request to EC2
+        run: |
+          curl -X POST "http://34.227.104.121:8003/update_model" \
+            -H "Content-Type: application/json" \
+            -d "{\"model_data\": ${{ github.event.inputs.model_data }}}"

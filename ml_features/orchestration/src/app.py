@@ -125,3 +125,6 @@ if __name__ == "__main__":
     # curl -X POST "http://localhost:8002/estimate-calories/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8002)
+    
+    # Try this for deployed version on EC2:
+    # curl -X POST "http://34.227.104.121:8002/estimate-calories/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"

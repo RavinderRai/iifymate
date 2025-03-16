@@ -68,5 +68,5 @@ if __name__ == "__main__":
     # curl -X POST "http://localhost:8001/analyze-meal/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
     
     # For deployed version change localhost part of link to the EC2 public ip: 
-    # curl -X POST "http://44.201.224.221:8001/analyze-meal/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
+    # curl -X POST "http://34.227.104.121:8001/analyze-meal/" -H "accept: application/json" -H "Content-Type: multipart/form-data" -F "file=@notebooks/data/sample_meal_images/scrambled_eggs.jpg"
     
