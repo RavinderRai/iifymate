@@ -1,5 +1,5 @@
 collection:
-  target_recipes: 100
+  target_recipes: 200
   min_recipes_per_category: 10
   max_retries: 5
   requests_per_minute: 10

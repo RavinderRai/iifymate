@@ -2,13 +2,20 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import os
+from dotenv import load_dotenv
 import subprocess
 from airflow.models import Variable
+
+load_dotenv("/home/ravib/projects/iifymate/.env")
 
 """
 If you make a change to this file, make sure to run:
 cp ml_features/ml_calorie_estimation/airflow/dags/ml_pipeline.py ~/airflow/dags/
 to update the DAG in Airflow
+
+or simply run it with the run_pipeline.sh script with the command:
+`ml_features/ml_calorie_estimation/airflow/run_pipeline.sh`
+in the .airflow virtual environment.
 """
 
 default_args = {
@@ -76,5 +83,12 @@ train_task = PythonOperator(
     dag=dag,
 )
 
+deploy_task = PythonOperator(
+    task_id="deploy_model",
+    python_callable=run_script,
+    op_args=["deploy"],
+    dag=dag,
+)
+
 # Define dependencies (sequential execution)
-data_ingestion_task >> data_cleaning_task >> feature_engineering_task >> train_task
+data_ingestion_task >> data_cleaning_task >> feature_engineering_task >> train_task >> deploy_task
