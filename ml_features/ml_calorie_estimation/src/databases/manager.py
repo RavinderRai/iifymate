@@ -1,5 +1,6 @@
 from typing import List, Type, TypeVar
 import logging
+import time
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from ml_features.ml_calorie_estimation.src.databases.config import DatabaseConfig
@@ -11,12 +12,24 @@ logger = logging.getLogger(__name__)
 
 class DatabaseManager:
     def __init__(self, config: DatabaseConfig):
-        self.engine = create_engine(config.connection_string)
+        self.engine = create_engine(
+            config.connection_string
+        )
         self.Session = sessionmaker(bind=self.engine)
         
     def init_db(self):
         """Initialize database tables"""
-        BaseTable.metadata.create_all(self.engine)
+        max_retries = 1
+        for attempt in range(max_retries):
+            try:
+                BaseTable.metadata.create_all(self.engine)
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    logger.error(f"Failed to initialize database after {max_retries} attempts: {e}")
+                    raise
+                logger.warning(f"Database initialization attempt {attempt + 1} failed: {e}")
+                time.sleep(5)
         
     def create_table(self, model_class: Type[T]) -> None:
         """Create table if it doesn't exist

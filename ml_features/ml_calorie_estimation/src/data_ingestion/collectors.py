@@ -1,6 +1,8 @@
 import time
 import asyncio
 import random
+
+from tqdm.asyncio import tqdm
 from ml_features.ml_calorie_estimation.src.data_ingestion.config import RecipeParameters, ParameterStats
 from ml_features.ml_calorie_estimation.src.data_ingestion.clients import RecipeClient
 
@@ -105,38 +107,44 @@ class RecipeDataCollector:
         unique_recipes = set()
         retries = 0
         
-        while len(unique_recipes) < target_recipes and retries < self.max_retries:
-            try:
-                async with self.semaphore:
-                    # Generate parameter combination
-                    params = self._generate_parameter_combination()
-                    logger.info(f"Trying parameters: {params}")
-                    
-                    # Rate limiting
-                    await asyncio.sleep(self.rate_limit)
-                    
-                    # Get recipes
-                    recipes = await self.client.get_recipes(**params)
-                    
-                    if recipes:
-                        # Update stats for successful combination
-                        self._update_stats(params, success=True)
+        pbar = tqdm(total=target_recipes, desc="Collecting Recipes", unit="recipe")
+        try:
+            while len(unique_recipes) < target_recipes and retries < self.max_retries:
+                try:
+                    async with self.semaphore:
+                        # Generate parameter combination
+                        params = self._generate_parameter_combination()
+                        logger.info(f"Trying parameters: {params}")
                         
-                        # Store new unique recipes
-                        for recipe in recipes:
-                            recipe_id = recipe['uri']
-                            if recipe_id not in unique_recipes:
-                                unique_recipes.add(recipe_id)
-                                self._store_recipe(recipe)
-                    else:
-                        # Update stats for unsuccessful combination
-                        self._update_stats(params, success=False)
+                        # Rate limiting
+                        await asyncio.sleep(self.rate_limit)
                         
-                    logger.info(f"Collected {len(unique_recipes)} unique recipes")
-                
-            except Exception as e:
-                logger.info(f"Error collecting recipes: {str(e)}")
-                retries += 1
-                
+                        # Get recipes
+                        recipes = await self.client.get_recipes(**params)
+                        
+                        if recipes:
+                            # Update stats for successful combination
+                            self._update_stats(params, success=True)
+                            
+                            # Store new unique recipes
+                            for recipe in recipes:
+                                recipe_id = recipe['uri']
+                                if recipe_id not in unique_recipes:
+                                    unique_recipes.add(recipe_id)
+                                    self._store_recipe(recipe)
+                                    pbar.update(1)
+                        else:
+                            # Update stats for unsuccessful combination
+                            self._update_stats(params, success=False)
+                            
+                        logger.info(f"Collected {len(unique_recipes)} unique recipes")
+                    
+                except Exception as e:
+                    logger.info(f"Error collecting recipes: {str(e)}")
+                    retries += 1
+                    
+        finally:
+            pbar.close()
+                    
         return list(self.collected_recipes.values())
     

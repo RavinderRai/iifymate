@@ -1,14 +1,33 @@
 collection:
-  target_recipes: 10000
-  min_recipes_per_category: 200
+  target_recipes: 200
+  min_recipes_per_category: 10
   max_retries: 5
   requests_per_minute: 10
 
-database:
-  username: "iifymate"
-  host: "production_host"
-  database: "recipe_data"
-
 api:
   base_url: "https://api.edamam.com/api/recipes/v2"
-  timeout: 30
+  timeout: 45
+
+database:
+  username: "${RDS_USERNAME}"
+  password: "${RDS_PASSWORD}"
+  host: "${RDS_HOST}" 
+  database: "iifymate"
+  port: 5432
+  
+aws:
+  region: "us-east-1"
+  s3_bucket: "iifymate-ml-data"
+  model_prefix: "models/"
+  data_prefix: "datasets/"
+  feature_store_prefix: "feature_store/"
+  sagemaker:
+    instance_type: "ml.m4.xlarge"  # Free tier eligible
+    training_job_timeout: 3600
+    role: "${SAGEMAKER_ROLE_ARN}"  # Will be populated from env var
+    output_path: "s3://iifymate-ml-data/models/"  # Where SageMaker saves models
+    max_retries: 3
+    max_parallel_jobs: 1  # For free tier, keep this at 1
+    tags:
+      Project: "iifymate"
+      Environment: "development"

@@ -3,14 +3,15 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
-from pathlib import Path
 from ml_features.ml_calorie_estimation.src.predicting.macro_predictor import MacroPredictor
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-predictor = MacroPredictor(env="local")
+
+env = os.getenv("ENV", "local")
+predictor = MacroPredictor(env=env)
 
 REQUESTS = Counter('calorie_predictions_total', 'Total number of predictions made')
 PREDICTION_TIME = Histogram('prediction_latency_seconds', 'Time spent processing prediction')

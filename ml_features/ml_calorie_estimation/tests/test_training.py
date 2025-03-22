@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch, MagicMock
 import mlflow
 import xgboost as xgb
 
-from ml_features.ml_calorie_estimation.src.training.data_validation import clean_training_testing_data
+from ml_features.ml_calorie_estimation.src.training.data_loader import clean_training_testing_data
 #from ml_features.ml_calorie_estimation.src.training.grid_search import grid_search_macro_model
 #from ml_features.ml_calorie_estimation.src.training.model_utils import evaluate_model
 #from ml_features.ml_calorie_estimation.src.training.multi_train import train_all_macro_models
