@@ -122,6 +122,7 @@
         android:id="@+id/test_mode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Test with Sample Image"/>
+        android:text="Test with Sample Image"
+        android:visibility="invisible"/>
 
 </FrameLayout>
