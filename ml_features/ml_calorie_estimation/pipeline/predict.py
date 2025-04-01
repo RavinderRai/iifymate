@@ -62,3 +62,6 @@ if __name__ == "__main__":
     # curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d '{"text": "Vegan Black Bean Tacos, 1/2 cups of black beans, 2 tortillas"}'
     
     # Might need to change link if using uvicorn vs docker.
+    
+    # Test ec2 endpoint:
+    # curl -X POST http://34.227.104.121:8000/predict -H "Content-Type: application/json" -d '{"text": "Vegan Black Bean Tacos, 1/2 cups of black beans, 2 tortillas"}'

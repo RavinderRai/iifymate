@@ -202,3 +202,4 @@ notebooks/ml_calorie_estimation/model_dir/
 .airflow/
 
 ml-macro-service.pem
+.qodo
