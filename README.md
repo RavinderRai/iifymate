@@ -1,7 +1,5 @@
 # IFFYMate v2: AI-Powered Macro Tracking
 
-[Google Play Link](https://play.google.com/store/apps/details?id=com.qml_studios.flavour_quasar_app)
-
 Mobile app that analyzes food images and provides personalized macro/calorie tracking through AI, combining LLMs and traditional ML.
 
 ## Core Features
